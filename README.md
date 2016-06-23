@@ -1,10 +1,8 @@
 #apigeectl
 
-This project is a command line interface that wraps the Shipyard deployment API, Enrober.
+This project is a command line interface that wraps the Shipyard build and deploy APIs.
 
-**This is not meant to replace `kubectl`, but merely to wrap the many available API resources of Enrober**
-
-It is to be used in conjunction with the Shipyard build API.
+**This is not meant to replace `kubectl`, but merely to wrap the many available API resources of Shipyard**
 
 ###Local Build
 ```sh
@@ -17,15 +15,18 @@ go install
 `apigeectl` expects the following three environment variables be in place in order to use it.
 
 - `APIGEE_ORG`: Your Apigee org name
+- `APIGEE_ENVIRONMENT_NAME`: Your Apigee env name
 - `APIGEE_TOKEN`: Your JWT access token generated from Apigee credentials
-- `CLUSTER_TARGET`: The protocol and location of the k8s cluster (i.e. "http://test.cluster.name")
+- `CLUSTER_TARGET`: The _protocol_ and _host name_ of the k8s cluster (i.e. "http://test.cluster.name")
 
 ###Usage
-The available resources are documented in the [Enrober repository](https://github.com/30x/enrober)
 
 The list of available commands is as follows:
 ```
   ▾ apigeectl
+    ▾ image
+        create
+        get
     ▾ environment
         create
         get
@@ -40,7 +41,21 @@ The list of available commands is as follows:
 
 Please also see `apigeectl --help` for more information on the available commands and their arguments.
 
-The API and this CLI's behave in a RESTful manner with a classic CRUD usage.
+####Walk through
+
+**Build an image of a Node.js app**
+```sh
+> apigeectl create image "example" 1 "./example-app.zip"
+> export PTS_URL="<copy the Pod Template Spec URL generated and output by the build image command>"
+```
+The build command takes the name of your application, the revision number and the path to your zipped Node app.
+_Note: there must be a valid package.json in the root of zipped application_
+
+**Verify image creation**
+```sh
+> apigeectl get image example 1
+```
+This merely retrieves the available information for the image specified by the applicaiton name and revision number
 
 **Create a new environment**
 ```sh
@@ -66,7 +81,7 @@ The environment "test" will be updated to accept traffic from the following host
 > export PRIVATE_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
 > apigeectl create deployment "test" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL
 ```
-This creates a new deployment within the "test" environment with a previously generated PTS URL. The number 1 represents the number
+This creates a new deployment within the "test" environment with the previously generated PTS URL. The number 1 represents the number
 of replicas to be made and "example" is the name of the deployment.
 
 **Retrieve newly created deployment by name**
