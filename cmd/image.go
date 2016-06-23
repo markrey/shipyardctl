@@ -107,28 +107,55 @@ The image must've be built by a successful 'shipyardctl build image' command
 
 Example of use:
 
-$ shipyardctl get image example 1`,
+$ shipyardctl get image example 1
+
+OR
+
+$ shipyardctl get image example --all`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
-			fmt.Println("Missing required args\n")
-			fmt.Println("Usage:\n\t "+cmd.Use+"\n")
-			return
-		}
+		if all {
+			if len(args) < 1 {
+				fmt.Println("Missing application name\n")
+				return
+			}
 
-		appName := args[0]
-		revision := args[1]
+			appName := args[0]
 
-		req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images", nil)
+			req.Header.Set("Authorization", "Bearer " + authToken)
+			response, err := http.DefaultClient.Do(req)
 
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			_, err := io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
+			} else {
+				defer response.Body.Close()
+				_, err := io.Copy(os.Stdout, response.Body)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		} else {
+			if len(args) < 2 {
+				fmt.Println("Missing required args\n")
+				fmt.Println("Usage:\n\t "+cmd.Use+"\n")
+				return
+			}
+
+			appName := args[0]
+			revision := args[1]
+
+			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
+			req.Header.Set("Authorization", "Bearer " + authToken)
+			response, err := http.DefaultClient.Do(req)
+
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				defer response.Body.Close()
+				_, err := io.Copy(os.Stdout, response.Body)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	},
@@ -137,4 +164,5 @@ $ shipyardctl get image example 1`,
 func init() {
 	createCmd.AddCommand(imageCmd)
 	getCmd.AddCommand(getImageCmd)
+	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
 }
