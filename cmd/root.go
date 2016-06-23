@@ -32,6 +32,8 @@ var clusterTarget string
 var authToken string
 var depName string
 var apiPath string
+var buildPath string
+var imagePath string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -81,6 +83,8 @@ func init() {
 
 	// Enrober API path, appended to clusterTarget before each API call
 	apiPath = "/beeswax/deploy/api/v1"
+	imagePath = "/beeswax/images/api/v1/namespaces/"
+	buildPath = "/beeswax/images/api/v1/builds/"
 }
 
 // NOTE: this is auto-generated code from Cobra, not sure it's actually doing anything
