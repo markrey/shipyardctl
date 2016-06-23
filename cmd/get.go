@@ -26,7 +26,7 @@ var getCmd = &cobra.Command{
 	Long: `This command, when paired with the proper subcommand, environment or deployment
 will procure the appropraite information. An example call would look like:
 
-apigeectl get deployment env1 dep1`,
+shipyardctl get deployment env1 dep1`,
 }
 
 func init() {

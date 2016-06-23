@@ -43,11 +43,11 @@ var environmentCmd = &cobra.Command{
 	Long: `Given an environment name, this will retrieve the available information of the
 active environment(s) in JSON format. Example usage looks like:
 
-$ apigeectl get environment env1
+$ shipyardctl get environment env1
 
 OR
 
-$ apigeectl get environment --all`,
+$ shipyardctl get environment --all`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if all {
 			req, err := http.NewRequest("GET", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments", nil)
@@ -94,7 +94,7 @@ var deleteEnvCmd = &cobra.Command{
 	Long: `Given the name of an active environment, this will delete it.
 
 Example of use:
-$ apigeectl delete environment env1`,
+$ shipyardctl delete environment env1`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
@@ -129,7 +129,7 @@ var createEnvCmd = &cobra.Command{
 it will be identified, and a space separated list of accepted hostnames.
 
 Example of use:
-$ apigeectl create environment env1 "test.host.name1" "test.host.name2"`,
+$ shipyardctl create environment env1 "test.host.name1" "test.host.name2"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
@@ -176,7 +176,7 @@ set of hostnames, the environment will be updated. A patch of the hostnames
 will replace them entirely.
 
 Example of use:
-$ apigeectl patch env1 "test.host.name3" "test.host.name4"`,
+$ shipyardctl patch env1 "test.host.name3" "test.host.name4"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")

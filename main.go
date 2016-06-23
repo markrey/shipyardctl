@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/noahdietz/apigeectl/cmd"
+import "github.com/noahdietz/shipyardctl/cmd"
 
 func main() {
 	cmd.Execute()

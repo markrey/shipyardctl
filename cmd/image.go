@@ -38,7 +38,7 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ apigeectl build image example 1 "./path/to/zipped/app"`,
+$ shipyardctl build image example 1 "./path/to/zipped/app"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 3 {
 			fmt.Println("Missing required args\n")
@@ -103,11 +103,11 @@ var getImageCmd = &cobra.Command{
 	Short: "retrieves a built image's info'",
 	Long: `This command retrieves the build specified by the application name and revision number.
 
-The image must've be built by a successful 'apigeectl build image' command
+The image must've be built by a successful 'shipyardctl build image' command
 
 Example of use:
 
-$ apigeectl get image example 1`,
+$ shipyardctl get image example 1`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			fmt.Println("Missing required args\n")

@@ -37,9 +37,9 @@ var imagePath string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "apigeectl",
+	Use:   "shipyardctl",
 	Short: "A CLI wrapper for Enrober API",
-	Long: `apigeectl is a CLI wrapper for the deployment management API known as Enrober.
+	Long: `shipyardctl is a CLI wrapper for the deployment management API known as Enrober.
 This API is used for managing and creating environments and deployments
 in the Apigee Kuberenetes cluster solution. It is to be used in conjunction with Shipyard,
 for the image building.
