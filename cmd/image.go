@@ -29,7 +29,7 @@ import (
 
 // imageCmd represents the image command
 var imageCmd = &cobra.Command{
-	Use:   "image <appName> <revision> <zipPath>",
+	Use:   "image <appName> <revision> <publicPath> <zipPath>",
 	Short: "builds a Docker image with Shipyard",
 	Long: `This command is used to build Docker images with Shipyard's build API
 from a given, zipped Node.js application.
@@ -38,9 +38,9 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ shipyardctl build image example 1 "./path/to/zipped/app"`,
+$ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 3 {
+		if len(args) < 4 {
 			fmt.Println("Missing required args\n")
 			fmt.Println("Usage:\n\t "+cmd.Use+"\n")
 			return
@@ -48,7 +48,8 @@ $ shipyardctl build image example 1 "./path/to/zipped/app"`,
 
 		appName := args[0]
 		revision := args[1]
-		zipPath := args[2]
+		publicPath := args[2]
+		zipPath := args[3]
 
 		zip, err := os.Open(zipPath)
 		if err != nil {
@@ -67,6 +68,7 @@ $ shipyardctl build image example 1 "./path/to/zipped/app"`,
 		writer.WriteField("namespace", orgName)
 		writer.WriteField("revision", revision)
 		writer.WriteField("application", appName)
+		writer.WriteField("publicPath", publicPath)
 
 		err = writer.Close()
 		if err != nil {
