@@ -34,6 +34,7 @@ var depName string
 var apiPath string
 var buildPath string
 var imagePath string
+var pubKey string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
