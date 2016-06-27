@@ -23,9 +23,15 @@ import (
 	"encoding/json"
 	"bytes"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
+
+type EnvVar struct {
+	Name string
+	Value string
+}
 
 type Deployment struct {
 	DeploymentName string
@@ -33,6 +39,7 @@ type Deployment struct {
 	PrivateHosts string
 	Replicas int64
 	PtsUrl string
+	EnvVars []EnvVar
 }
 
 type DeploymentPatch struct {
@@ -41,6 +48,12 @@ type DeploymentPatch struct {
 	Replicas int64
 	PtsUrl string
 }
+
+var envVars []string
+const (
+	NAME = 0
+	VALUE = 1
+)
 
 // represents the get deployment command
 var deploymentCmd = &cobra.Command{
@@ -177,9 +190,10 @@ $ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "h
 			log.Fatal(err)
 		}
 		ptsUrl := args[5]
+		vars := parseEnvVars()
 
 		// prepare arguments in a Deployment struct and Marshal into JSON
-		js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl})
+		js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl, vars})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -258,5 +272,22 @@ func init() {
 
 	deleteCmd.AddCommand(deleteDeploymentCmd)
 	createCmd.AddCommand(createDeploymentCmd)
+	createDeploymentCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variables to set in the deployment")
 	patchCmd.AddCommand(patchDeploymentCmd)
+}
+
+func parseEnvVars() (parsed []EnvVar) {
+	var temp string
+
+	if len(envVars) > 0 {
+		for i := range envVars {
+			temp = envVars[i]
+			split := strings.Split(temp, "=")
+			parsed = append(parsed, EnvVar{split[NAME], split[VALUE]})
+		}
+	} else {
+		return []EnvVar{}
+	}
+
+	return parsed
 }
