@@ -4,11 +4,10 @@ This project is a command line interface that wraps the Shipyard build and deplo
 
 **This is not meant to replace `kubectl`, but merely to wrap the many available API resources of Shipyard**
 
-###Local Build
+###Installation
+From your Go workspace, run the following:
 ```sh
-git clone https://github.com/30x/shipyardctl.git
-cd shipyardctl
-go install
+> go get github.com/30x/shipyardctl
 ```
 
 ###Environment
@@ -17,7 +16,7 @@ go install
 - `APIGEE_ORG`: Your Apigee org name
 - `APIGEE_ENVIRONMENT_NAME`: Your Apigee env name
 - `APIGEE_TOKEN`: Your JWT access token generated from Apigee credentials
-- `CLUSTER_TARGET`: The _protocol_ and _host name_ of the k8s cluster (i.e. "http://test.cluster.name")
+- `CLUSTER_TARGET`: The _protocol_ and _host name_ of the k8s cluster (default: "https://shipyard.apigee.com")
 
 ###Usage
 
@@ -40,6 +39,8 @@ The list of available commands is as follows:
     ▾ bundle
         create
 ```
+
+All commands support verbose output with the `-v` or `--verbose` flag.
 
 Please also see `shipyardctl --help` for more information on the available commands and their arguments.
 
@@ -125,4 +126,4 @@ This deletes the named deployment.
 ```sh
 > shipyardctl delete environment "test"
 ```
-This deletes the named deployment
+This deletes the named environment
