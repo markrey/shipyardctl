@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/noahdietz/shipyardctl/cmd"
+import "github.com/30x/shipyardctl/cmd"
 
 func main() {
 	cmd.Execute()
