@@ -187,8 +187,53 @@ $ shipyardctl get image example --all`,
 	},
 }
 
+var deleteImageCmd = &cobra.Command{
+	Use:   "image <appName> <revision>",
+	Short: "deletes a built image'",
+	Long: `This command deletes the image specified by the application name and revision number.
+
+The image must've be built by a successful 'shipyardctl build image' command
+
+Example of use:
+
+$ shipyardctl delete image example 1`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 2 {
+			fmt.Println("Missing required args\n")
+			fmt.Println("Usage:\n\t "+cmd.Use+"\n")
+			return
+		}
+
+		appName := args[0]
+		revision := args[1]
+
+		req, err := http.NewRequest("DELETE", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
+		req.Header.Set("Authorization", "Bearer " + authToken)
+		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			defer response.Body.Close()
+			_, err := io.Copy(os.Stdout, response.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	},
+}
+
 func init() {
 	createCmd.AddCommand(imageCmd)
 	getCmd.AddCommand(getImageCmd)
 	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
+	deleteCmd.AddCommand(deleteImageCmd)
 }
