@@ -48,10 +48,11 @@ Please also see `shipyardctl --help` for more information on the available comma
 
 **Build an image of a Node.js app**
 ```sh
-> shipyardctl create image "example" 1 "./example-app.zip"
+> shipyardctl create image "example" 1 "9000:/example" "./example-app.zip"
 > export PTS_URL="<copy the Pod Template Spec URL generated and output by the build image command>"
 ```
-The build command takes the name of your application, the revision number and the path to your zipped Node app.
+The build command takes the name of your application, the revision number, the public port/path to reach your application
+and the path to your zipped Node app.
 _Note: there must be a valid package.json in the root of zipped application_
 
 **Verify image creation**
