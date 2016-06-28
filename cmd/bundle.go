@@ -73,23 +73,40 @@ $ shipyardctl create bundle exampleApp`,
 			return
 		}
 
+		if verbose {
+			fmt.Println("Creating tmpdir at: "+tmpdir)
+		}
+
 		defer os.RemoveAll(tmpdir)
 
 		// make apiproxy directory structure
 		dir := filepath.Join(tmpdir, "apiproxy")
 		err = os.Mkdir(dir, fileMode)
+
+		if verbose {
+			fmt.Println("Creating folder 'apiproxy' at: "+dir)
+		}
 		checkError(err, "Unable to make root apiproxy dir")
 
 		proxiesDirPath := filepath.Join(dir, "proxies")
 		err = os.Mkdir(proxiesDirPath, fileMode)
+		if verbose {
+			fmt.Println("Creating subfolder 'proxies' at: "+proxiesDirPath)
+		}
 		checkError(err, "Unable to make proxies dir")
 
 		targetsDirPath := filepath.Join(dir, "targets")
 		err = os.Mkdir(targetsDirPath, fileMode)
+		if verbose {
+			fmt.Println("Creating subfolder 'targets' at: "+targetsDirPath)
+		}
 		checkError(err, "Unable to make targets dir")
 
 		policiesDirPath := filepath.Join(dir, "policies")
 		err = os.Mkdir(policiesDirPath, fileMode)
+		if verbose {
+			fmt.Println("Creating subfolder 'policies' at: "+policiesDirPath)
+		}
 		checkError(err, "Unable to make policies dir")
 
 		// bundle user info for templates
@@ -97,7 +114,10 @@ $ shipyardctl create bundle exampleApp`,
 
 		// example.xml --> ./apiproxy/
 		proxy_xml, err := os.Create(filepath.Join(dir, appName+".xml"))
-		err =proxy_xml.Chmod(fileMode)
+		err = proxy_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file '"+appName+".xml'")
+		}
 		checkError(err, "Unable to make "+appName+".xml file")
 
 		proxyTmpl, err := template.New("PROXY").Parse(PROXY_XML)
@@ -108,6 +128,9 @@ $ shipyardctl create bundle exampleApp`,
 		// AddCors.xml --> ./apiproxy/policies
 		add_cors_xml, err := os.Create(filepath.Join(policiesDirPath, "AddCors.xml"))
 		err = add_cors_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file 'policies/AddCors.xml'")
+		}
 		checkError(err, "Unable to make AddCors.xml file")
 
 		addCors, err := template.New("ADD_CORS").Parse(ADD_CORS)
@@ -118,6 +141,9 @@ $ shipyardctl create bundle exampleApp`,
 		// RetainHostHeaders.xml --> ./apiproxy/policies
 		retain_host_headers_xml, err := os.Create(filepath.Join(policiesDirPath, "RetainHostHeaders.xml"))
 		err = retain_host_headers_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file 'policies/RetainHostHeaders.xml'")
+		}
 		checkError(err, "Unable to make RetainHostHeaders.xml file")
 
 		retainHost, err := template.New("RETAIN_HOST").Parse(RETAIN_HOST)
@@ -128,6 +154,9 @@ $ shipyardctl create bundle exampleApp`,
 		// SetRoutingAPIKey.xml --> ./apiproxy/policies
 		set_routing_key_xml, err := os.Create(filepath.Join(policiesDirPath, "SetRoutingAPIKey.xml"))
 		err = set_routing_key_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file 'policies/SetRoutingAPIKey.xml'")
+		}
 		checkError(err, "Unable to make SetRoutingAPIKey.xml file")
 
 		routingKey, err := template.New("ROUTING_KEY").Parse(ROUTING_KEY)
@@ -139,10 +168,16 @@ $ shipyardctl create bundle exampleApp`,
 		// default.xml --> ./apiproxy/proxies && ./apiproxy/targets
 		proxy_default_xml, err := os.Create(filepath.Join(proxiesDirPath, "default.xml"))
 		err = proxy_default_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file 'proxies/default.xml'")
+		}
 		checkError(err, "Unable to make default.xml file")
 
 		target_default_xml, err := os.Create(filepath.Join(targetsDirPath, "default.xml"))
 		err = target_default_xml.Chmod(fileMode)
+		if verbose {
+			fmt.Println("Creating file 'targets/default.xml'")
+		}
 		checkError(err, "Unable to make default.xml file")
 
 		proxyEndpoint, err := template.New("PROXY_ENDPOINT").Parse(PROXY_ENDPOINT)
@@ -157,12 +192,22 @@ $ shipyardctl create bundle exampleApp`,
 		// move zip to designated savePath
 		if savePath != "" {
 			err = os.Rename(dir, filepath.Join(savePath, "apiproxy"))
+			if verbose {
+				fmt.Println("Moving proxy folder to "+savePath)
+			}
 			checkError(err, "Unable to move apiproxy to target save directory")
 		} else { // move apiproxy from tmpdir to cwd
 			cwd, err := os.Getwd()
 			err = os.Rename(dir, filepath.Join(cwd, "apiproxy"))
+			if verbose {
+				fmt.Println("Moving proxy folder to CWD")
+			}
 			checkError(err, "Unable to move apiproxy bundle to cwd")
 		}
+
+		if verbose {
+				fmt.Println("Deleting tmpdir")
+			}
 	},
 }
 
