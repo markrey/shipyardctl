@@ -17,12 +17,15 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"net/http"
+	"net/http/httputil"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var verbose bool
 
 // global variables used by most commands
 var all bool
@@ -65,11 +68,11 @@ func init() {
 	// will be global for your application.
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.apigeectl.yaml)")
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Print environment variables used and API calls made")
 
 	// check apigeectl required environment variables
 	if clusterTarget = os.Getenv("CLUSTER_TARGET"); clusterTarget == "" {
-		fmt.Println("Missing required environment variable CLUSTER_TARGET")
-		os.Exit(-1)
+		clusterTarget = "https://shipyard.apigee.com"
 	}
 
 	if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" {
@@ -81,6 +84,9 @@ func init() {
 		fmt.Println("Missing required environment variable APIGEE_ORG")
 		os.Exit(-1)
 	}
+
+	pubKey = os.Getenv("PUBLIC_KEY")
+	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
 
 	// Enrober API path, appended to clusterTarget before each API call
 	apiPath = "/beeswax/deploy/api/v1"
@@ -102,5 +108,39 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+}
+
+func PrintVerboseRequest(req *http.Request) {
+	fmt.Println("Current environment:")
+	fmt.Println("CLUSTER_TARGET="+clusterTarget)
+	fmt.Println("APIGEE_ORG="+orgName)
+
+	if envName != "" {
+		fmt.Println("APIGEE_ENVIRONMENT_NAME="+envName)
+	}
+
+	if pubKey != "" {
+		fmt.Println("PUBLIC_KEY="+pubKey)
+	}
+
+	dump, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		fmt.Println("Request dump failed. Request state is unknown. Aborting.")
+		os.Exit(1)
+	}
+	fmt.Println("\nRequest:")
+	fmt.Printf("%s\n", string(dump))
+}
+
+func PrintVerboseResponse(res *http.Response) {
+	if res != nil {
+		fmt.Println("\nResponse:")
+		dump, err := httputil.DumpResponse(res, false)
+		if err != nil {
+			fmt.Println("Could not dump response")
+		}
+
+		fmt.Printf("%s", string(dump))
 	}
 }

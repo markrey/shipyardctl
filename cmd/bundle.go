@@ -181,8 +181,6 @@ func checkError(err error, customMsg string) {
 func init() {
 	createCmd.AddCommand(bundleCmd)
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
-	pubKey = os.Getenv("PUBLIC_KEY")
-	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
 
 	fileMode = 0755
 }

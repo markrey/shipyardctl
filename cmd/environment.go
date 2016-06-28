@@ -51,8 +51,16 @@ $ shipyardctl get environment --all`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if all {
 			req, err := http.NewRequest("GET", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments", nil)
+			if verbose {
+				PrintVerboseRequest(req)
+			}
+
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
+
+			if verbose {
+				PrintVerboseResponse(response)
+			}
 
 			if err != nil {
 				log.Fatal(err)
@@ -72,8 +80,16 @@ $ shipyardctl get environment --all`,
 
 			envName = args[0]
 			req, err := http.NewRequest("GET", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName, nil)
+			if verbose {
+				PrintVerboseRequest(req)
+			}
+
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
+
+			if verbose {
+				PrintVerboseResponse(response)
+			}
 
 			if err != nil {
 				log.Fatal(err)
@@ -104,8 +120,16 @@ $ shipyardctl delete environment env1`,
 
 		envName = args[0]
 		req, err := http.NewRequest("DELETE", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName, nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
 		if err != nil {
 			log.Fatal(err)
@@ -150,8 +174,16 @@ $ shipyardctl create environment env1 "test.host.name1" "test.host.name2"`,
 
 		req, err := http.NewRequest("POST", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments", bytes.NewBuffer(js))
 
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
 		if err != nil {
 			log.Fatal(err)
@@ -197,8 +229,16 @@ $ shipyardctl patch env1 "test.host.name3" "test.host.name4"`,
 
 		req, err := http.NewRequest("PATCH", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName, bytes.NewBuffer(js))
 
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
 		if err != nil {
 			log.Fatal(err)

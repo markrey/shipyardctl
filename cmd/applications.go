@@ -35,8 +35,16 @@ Example of use:
 $ shipyardctl get applications`,
 	Run: func(cmd *cobra.Command, args []string) {
 		req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications", nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
 		if err != nil {
 			log.Fatal(err)

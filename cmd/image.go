@@ -80,9 +80,17 @@ $ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 			log.Fatal(err)
 		}
 
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		req.Header.Add("Content-Type", writer.FormDataContentType())
 		response, err := http.DefaultClient.Do(req)
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
 		if err != nil {
 			log.Fatal(err)
@@ -124,8 +132,16 @@ $ shipyardctl get image example --all`,
 			appName := args[0]
 
 			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images", nil)
+			if verbose {
+				PrintVerboseRequest(req)
+			}
+
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
+
+			if verbose {
+				PrintVerboseResponse(response)
+			}
 
 			if err != nil {
 				log.Fatal(err)
@@ -147,8 +163,16 @@ $ shipyardctl get image example --all`,
 			revision := args[1]
 
 			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
+			if verbose {
+				PrintVerboseRequest(req)
+			}
+
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
+
+			if verbose {
+				PrintVerboseResponse(response)
+			}
 
 			if err != nil {
 				log.Fatal(err)
