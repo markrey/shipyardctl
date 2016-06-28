@@ -26,7 +26,7 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <Flows/>
     <HTTPTargetConnection>
         <Properties/>
-        <URL>https://shipyard-backend-west.e2e.apigee.net</URL>
+        <URL>https://shipyard-backend-east.production.apigeeks.net</URL>
     </HTTPTargetConnection>
 </TargetEndpoint>`
 
