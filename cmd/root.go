@@ -21,10 +21,8 @@ import (
 	"net/http/httputil"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var cfgFile string
 var verbose bool
 
 // global variables used by most commands
@@ -61,13 +59,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports Persistent Flags, which, if defined here,
-	// will be global for your application.
-
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.apigeectl.yaml)")
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Print environment variables used and API calls made")
 
 	// check apigeectl required environment variables
@@ -92,23 +83,6 @@ func init() {
 	apiPath = "/beeswax/deploy/api/v1"
 	imagePath = "/beeswax/images/api/v1/namespaces/"
 	buildPath = "/beeswax/images/api/v1/builds/"
-}
-
-// NOTE: this is auto-generated code from Cobra, not sure it's actually doing anything
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
-
-	viper.SetConfigName(".apigeectl") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")  // adding home directory as first search path
-	viper.AutomaticEnv()          // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
 }
 
 func PrintVerboseRequest(req *http.Request) {
