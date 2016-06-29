@@ -26,6 +26,9 @@ The list of available commands is as follows:
     ▾ image
         create
         get
+        delete
+    ▾ applications
+        get
     ▾ environment
         create
         get
@@ -83,7 +86,7 @@ The environment "test" will be updated to accept traffic from the following host
 ```sh
 > export PUBLIC_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
 > export PRIVATE_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
-> shipyardctl create deployment "test" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL -e "NAME1=VALUE1" -e "NAME2=VALUE2"
+> shipyardctl create deployment "test" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL --env "NAME1=VALUE1" -e "NAME2=VALUE2"
 ```
 This creates a new deployment within the "test" environment with the previously generated PTS URL. The number 1 represents the number
 of replicas to be made and "example" is the name of the deployment.
@@ -128,3 +131,9 @@ This deletes the named deployment.
 > shipyardctl delete environment "test"
 ```
 This deletes the named environment
+
+**Delete the image**
+```sh
+> shipyardctl delete image "example" 1
+```
+This deletes the built application image, specified by the given app name and reivsion number
