@@ -42,18 +42,18 @@ $ shipyardctl get applications`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		defer response.Body.Close()
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }

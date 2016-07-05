@@ -88,22 +88,23 @@ $ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 		req.Header.Add("Content-Type", writer.FormDataContentType())
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		// dump response to stdout
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nImage build successful\n")
+		}
+
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			// dump response to stdout
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nImage build successful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }
@@ -139,18 +140,18 @@ $ shipyardctl get image example --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		} else {
 			if len(args) < 2 {
@@ -170,18 +171,18 @@ $ shipyardctl get image example --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		}
 	},
@@ -215,18 +216,18 @@ $ shipyardctl delete image example 1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		defer response.Body.Close()
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }

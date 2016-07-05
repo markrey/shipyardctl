@@ -58,18 +58,18 @@ $ shipyardctl get environment --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		} else {
 			if len(args) == 0 {
@@ -87,18 +87,18 @@ $ shipyardctl get environment --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		}
 	},
@@ -127,21 +127,21 @@ $ shipyardctl delete environment env1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nDeletion of " + envName + " was sucessful\n")
+		}
+
+		if verbose {
+				PrintVerboseResponse(response)
 			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nDeletion of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -181,21 +181,21 @@ $ shipyardctl create environment env1 "test.host.name1" "test.host.name2"`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nCreation of " + envName + " was sucessful\n")
+		}
+
+		if verbose {
+				PrintVerboseResponse(response)
 			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nCreation of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -236,21 +236,21 @@ $ shipyardctl patch env1 "test.host.name3" "test.host.name4"`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nPatch of " + envName + " was sucessful\n")
+		}
+
+		if verbose {
+				PrintVerboseResponse(response)
 			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nPatch of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }

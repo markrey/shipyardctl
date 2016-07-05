@@ -83,18 +83,18 @@ $ shipyardctl get deployment dep1`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		} else { // get active deployment by name
 			if len(args) < 2 {
@@ -115,18 +115,19 @@ $ shipyardctl get deployment dep1`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if verbose {
 				PrintVerboseResponse(response)
 			}
 
+			// dump response body to stdout
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
-			} else { // dump response body to stdout
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
 			}
 		}
 	},
@@ -167,22 +168,22 @@ $ shipyardctl delete deployment env1 dep1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		// dump response body to stdout
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nDeletion of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			// dump response body to stdout
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nDeletion of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }
@@ -233,22 +234,22 @@ $ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "h
 		req.Header.Set("Content-Type", "application/json")
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		// dump response to stdout
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nCreation of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			// dump response to stdout
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nCreation of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }
@@ -287,21 +288,21 @@ $ shipyardctl patch deployment env1 dep1 '{"replicas": 3, "publicHosts": "test.h
 		req.Header.Set("Content-Type", "application/json")
 		response, err := http.DefaultClient.Do(req)
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if verbose {
 			PrintVerboseResponse(response)
 		}
 
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nPatch of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nPatch of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	},
 }
