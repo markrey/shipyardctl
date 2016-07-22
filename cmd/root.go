@@ -32,10 +32,10 @@ var orgName string
 var clusterTarget string
 var authToken string
 var depName string
-var apiPath string
-var buildPath string
-var imagePath string
+var enroberPath string
+var basePath string
 var pubKey string
+var envVars []string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -69,18 +69,12 @@ func init() {
 		os.Exit(-1)
 	}
 
-	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-		fmt.Println("Missing required environment variable APIGEE_ORG")
-		os.Exit(-1)
-	}
-
 	pubKey = os.Getenv("PUBLIC_KEY")
 	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
 
 	// Enrober API path, appended to clusterTarget before each API call
-	apiPath = "/beeswax/deploy/api/v1"
-	imagePath = "/beeswax/images/api/v1/namespaces/"
-	buildPath = "/beeswax/images/api/v1/builds/"
+	enroberPath = "/environments"
+	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }
 
 func PrintVerboseRequest(req *http.Request) {
