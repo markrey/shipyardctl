@@ -139,7 +139,7 @@ var deleteDeploymentCmd = &cobra.Command{
 this will delete it.
 
 Example of use:
-$ shipyardctl delete deployment env1 dep1`,
+$ shipyardctl delete deployment org1:env1 dep1`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// check and pull required arguments
 		if len(args) == 0 {
@@ -196,7 +196,7 @@ of replicas and the URL that locates the appropriate Pod Template Spec built by 
 It also requires an active environment to deploy to.
 
 Example of use:
-$ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "https://pts.url.com"`,
+$ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name" 2 "https://pts.url.com"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// check and pull required args
 		if len(args) < 6 {
@@ -262,7 +262,7 @@ with the corresponding mutations. All properties, except for the deployment name
 That includes, the public or private hosts, replicas, PTS URL entirely, or the PTS itself.
 
 Example of use:
-$ shipyardctl patch deployment env1 dep1 '{"replicas": 3, "publicHosts": "test.host.name.patch"}'`,
+$ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "test.host.name.patch"}'`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// check and pull required args
 		if len(args) < 3 {

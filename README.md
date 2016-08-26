@@ -11,7 +11,7 @@ From your Go workspace, run the following:
 ```
 
 ###Environment
-`shipyardctl` expects the following environment variables be in place in order to use it.
+`shipyardctl` expects the following environment variables be in place in order to use it in its entirety.
 
 - `APIGEE_ORG`: Your Apigee org name
 - `APIGEE_ENVIRONMENT_NAME`: Your Apigee env name
@@ -67,44 +67,44 @@ This retrieves the available information for the image specified by the applicat
 
 **Create a new environment**
 ```sh
-> shipyardctl create environment "test" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
+> shipyardctl create environment "org1:env1" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
 > export PUBLIC_KEY="<copy public key in creation response here>"
 ```
-Here we create a new environment with the name "test" and the accepted hostnames of "orgName-test.apigee.net"
+Here we create a new environment with the name "org1:env1" and the accepted hostnames of "orgName-test.apigee.net"
 and "orgName-prod.apigee.net", a space delimited list.
 
 _Note: the naming convention used for hostnames is not strictly enforced, but will make Apigee Edge integration easier_
 
 **Retrieve the newly created environment by name**
 ```sh
-> shipyardctl get environment "test"
+> shipyardctl get environment "org1:env1"
 ```
 Here we have retrieved the newly created environment, by name.
 
 **Update the environment's set of accepted hostnames**
 ```sh
-> shipyardctl patch environment "test" "test.host.name3" "test.host.name4"
+> shipyardctl patch environment "org1:env1" "test.host.name3" "test.host.name4"
 ```
-The environment "test" will be updated to accept traffic from the following hostnames, explicitly.
+The environment "org1:env1" will be updated to accept traffic from the following hostnames, explicitly.
 
 **Create a new deployment**
 ```sh
 > export PUBLIC_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
 > export PRIVATE_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
-> shipyardctl create deployment "test" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL --env "NAME1=VALUE1" -e "NAME2=VALUE2"
+> shipyardctl create deployment "org1:env1" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL --env "NAME1=VALUE1" -e "NAME2=VALUE2"
 ```
-This creates a new deployment within the "test" environment with the previously generated PTS URL. The number 1 represents the number
+This creates a new deployment within the "org1:env1" environment with the previously generated PTS URL. The number 1 represents the number
 of replicas to be made and "example" is the name of the deployment.
 
 **Retrieve newly created deployment by name**
 ```sh
-> shipyardctl get deployment "test" "example"
+> shipyardctl get deployment "org1:env1" "example"
 ```
 The response will include all available information on the active deployment in the given environment.
 
 **Update the deployment**
 ```sh
-> shipyardctl patch deployment "test" "example" '{"replicas": 3, "publicHosts": "replacement.host.name"}'
+> shipyardctl patch deployment "org1:env1" "example" '{"replicas": 3, "publicHosts": "replacement.host.name"}'
 ```
 Updating a deployment by name, in a given environment, takes a JSON string that includes the properties to be changed.
 This includes:
@@ -127,13 +127,13 @@ upload this to Apigee Edge.
 
 **Delete the deployment**
 ```sh
-> shipyardctl delete deployment "test" "example"
+> shipyardctl delete deployment "org1:env1" "example"
 ```
 This deletes the named deployment.
 
 **Delete the environment**
 ```sh
-> shipyardctl delete environment "test"
+> shipyardctl delete environment "org1:env1"
 ```
 This deletes the named environment.
 
