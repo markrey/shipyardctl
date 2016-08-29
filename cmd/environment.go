@@ -47,8 +47,10 @@ $ shipyardctl get environment org1:env1
 
 OR
 
-$ shipyardctl get environment --all`,
+$ shipyardctl get environment --all --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		if all {
 			req, err := http.NewRequest("GET", clusterTarget + enroberPath, nil)
 			if verbose {
@@ -110,8 +112,10 @@ var deleteEnvCmd = &cobra.Command{
 	Long: `Given the name of an active environment, this will delete it.
 
 Example of use:
-$ shipyardctl delete environment org1:env1`,
+$ shipyardctl delete environment org1:env1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
@@ -151,11 +155,13 @@ var createEnvCmd = &cobra.Command{
 	Short: "creates a new environment with name and hostnames",
 	Long: `An environment is created by providing an environment name, by which
 it will be identified, and a space separated list of accepted hostnames.
-The environment name must be of the form {apigee_org}-{environment_name}.
+The environment name must be of the form {apigee_org}:{environment_name}.
 
 Example of use:
-$ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2"`,
+$ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
@@ -209,8 +215,10 @@ set of hostnames, the environment will be updated. A patch of the hostnames
 will replace them entirely.
 
 Example of use:
-$ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4"`,
+$ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")

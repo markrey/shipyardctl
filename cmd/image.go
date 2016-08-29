@@ -38,8 +38,12 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
+$ shipyardctl create image example 1 "9000:/example" "./path/to/zipped/app --org org1 --token <token>"`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+		RequireOrgName()
+		MakeBuildPath()
+
 		if len(args) < 4 {
 			fmt.Println("Missing required args\n")
 			fmt.Println("Usage:\n\t "+cmd.Use+"\n")
@@ -127,8 +131,12 @@ $ shipyardctl get image example 1
 
 OR
 
-$ shipyardctl get image example --all`,
+$ shipyardctl get image example --all --org org1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+		RequireOrgName()
+		MakeBuildPath()
+
 		if all {
 			if len(args) < 1 {
 				fmt.Println("Missing application name\n")
@@ -202,8 +210,12 @@ The image must've be built by a successful 'shipyardctl build image' command
 
 Example of use:
 
-$ shipyardctl delete image example 1`,
+$ shipyardctl delete image example 1 --org org1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+		RequireOrgName()
+		MakeBuildPath()
+
 		if len(args) < 2 {
 			fmt.Println("Missing required args\n")
 			fmt.Println("Usage:\n\t "+cmd.Use+"\n")
@@ -240,12 +252,12 @@ $ shipyardctl delete image example 1`,
 func init() {
 	createCmd.AddCommand(imageCmd)
 	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
-	getCmd.AddCommand(getImageCmd)
-	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
-	deleteCmd.AddCommand(deleteImageCmd)
+	imageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 
-	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-		fmt.Println("Missing required environment variable APIGEE_ORG")
-		os.Exit(-1)
-	}
+	getCmd.AddCommand(getImageCmd)
+	getImageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
+
+	deleteCmd.AddCommand(deleteImageCmd)
+	deleteImageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 }

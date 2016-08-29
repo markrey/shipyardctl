@@ -62,8 +62,10 @@ var deploymentCmd = &cobra.Command{
 available information in JSON format.
 
 Example of use:
-$ shipyardctl get deployment dep1`,
+$ shipyardctl get deployment dep1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
@@ -139,8 +141,10 @@ var deleteDeploymentCmd = &cobra.Command{
 this will delete it.
 
 Example of use:
-$ shipyardctl delete deployment org1:env1 dep1`,
+$ shipyardctl delete deployment org1:env1 dep1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		// check and pull required arguments
 		if len(args) == 0 {
 			fmt.Println("Missing required arg <environmentName>\n")
@@ -196,8 +200,10 @@ of replicas and the URL that locates the appropriate Pod Template Spec built by 
 It also requires an active environment to deploy to.
 
 Example of use:
-$ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name" 2 "https://pts.url.com"`,
+$ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name" 2 "https://pts.url.com" --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		// check and pull required args
 		if len(args) < 6 {
 			fmt.Println("Missing required args\n")
@@ -262,8 +268,10 @@ with the corresponding mutations. All properties, except for the deployment name
 That includes, the public or private hosts, replicas, PTS URL entirely, or the PTS itself.
 
 Example of use:
-$ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "test.host.name.patch"}'`,
+$ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "test.host.name.patch"}' --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
 		// check and pull required args
 		if len(args) < 3 {
 			fmt.Println("Missing required args\n")

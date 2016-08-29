@@ -46,8 +46,10 @@ in the environment.
 
 Example of use:
 
-$ shipyardctl create bundle exampleApp`,
+$ shipyardctl create bundle exampleApp --org org1 -k <pubKey> -e <envName>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireOrgName()
+
 		if len(args) < 1 {
 			fmt.Println("Missing required arg.")
 			fmt.Println("Usage:\t\n"+cmd.Use)
@@ -56,15 +58,8 @@ $ shipyardctl create bundle exampleApp`,
 
 		appName := args[0]
 
-		if pubKey == "" {
-			fmt.Println("Missing environment variable PUBLIC_KEY")
-			return
-		}
-
-		if envName == "" {
-			fmt.Println("Missing environment variable APIGEE_ENVIRONMENT_NAME")
-			return
-		}
+		requirePubKey()
+		requireEnvName()
 
 		// make a temp dir
 		tmpdir, err := ioutil.TempDir("", orgName+"_"+envName)
@@ -226,10 +221,31 @@ func checkError(err error, customMsg string) {
 func init() {
 	createCmd.AddCommand(bundleCmd)
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
+	bundleCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+	bundleCmd.Flags().StringVarP(&pubKey, "pubKey", "k", "", "Environment's public key")
+	bundleCmd.Flags().StringVarP(&envName, "envName", "e", "", "Apigee environment name")
 
 	fileMode = 0755
-	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-		fmt.Println("Missing required environment variable APIGEE_ORG")
-		os.Exit(-1)
+}
+
+func requirePubKey() {
+	if pubKey == "" {
+		if pubKey = os.Getenv("PUBLIC_KEY"); pubKey == "" {
+			fmt.Println("Missing required flag '--pubKey', or place in environment as PUBLIC_KEY.")
+			os.Exit(1)
+		}
 	}
+
+	return
+}
+
+func requireEnvName() {
+	if envName == "" {
+		if envName = os.Getenv("APIGEE_ENVIRONMENT_NAME"); envName == "" {
+			fmt.Println("Missing required flag '--envName', or place in environment as APIGEE_ENVIRONMENT_NAME.")
+			os.Exit(1)
+		}
+	}
+
+	return
 }
