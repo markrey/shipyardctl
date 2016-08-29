@@ -58,37 +58,21 @@ func Execute() {
 
 func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Print environment variables used and API calls made")
+	RootCmd.PersistentFlags().StringVarP(&authToken, "token", "t", "", "Apigee auth token. Required. Or place in APIGEE_TOKEN.")
 
 	// check apigeectl required environment variables
 	if clusterTarget = os.Getenv("CLUSTER_TARGET"); clusterTarget == "" {
 		clusterTarget = "https://shipyard.apigee.com"
 	}
 
-	if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" {
-		fmt.Println("Missing required environment variable APIGEE_TOKEN")
-		os.Exit(-1)
-	}
-
-	pubKey = os.Getenv("PUBLIC_KEY")
-	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
-
 	// Enrober API path, appended to clusterTarget before each API call
 	enroberPath = "/environments"
-	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }
 
 func PrintVerboseRequest(req *http.Request) {
 	fmt.Println("Current environment:")
 	fmt.Println("CLUSTER_TARGET="+clusterTarget)
 	fmt.Println("APIGEE_ORG="+orgName)
-
-	if envName != "" {
-		fmt.Println("APIGEE_ENVIRONMENT_NAME="+envName)
-	}
-
-	if pubKey != "" {
-		fmt.Println("PUBLIC_KEY="+pubKey)
-	}
 
 	dump, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
@@ -109,4 +93,30 @@ func PrintVerboseResponse(res *http.Response) {
 
 		fmt.Printf("%s", string(dump))
 	}
+}
+
+func RequireAuthToken() {
+	if authToken == "" {
+		if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" {
+			fmt.Println("Missing required flag '--token', or place in environment as APIGEE_TOKEN.")
+			os.Exit(1)
+		}
+	}
+
+	return
+}
+
+func RequireOrgName() {
+	if orgName == "" {
+		if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
+			fmt.Println("Missing required flag '--org', or place in environment as APIGEE_ORG.")
+			os.Exit(1)
+		}
+	}
+
+	return
+}
+
+func MakeBuildPath() {
+	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }

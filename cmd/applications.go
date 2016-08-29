@@ -32,8 +32,12 @@ returning all available information.
 
 Example of use:
 
-$ shipyardctl get applications`,
+$ shipyardctl get applications --org org1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+		RequireOrgName()
+		MakeBuildPath()
+
 		req, err := http.NewRequest("GET", clusterTarget + basePath, nil)
 		if verbose {
 			PrintVerboseRequest(req)
@@ -60,4 +64,5 @@ $ shipyardctl get applications`,
 
 func init() {
 	getCmd.AddCommand(applicationsCmd)
+	applicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 }

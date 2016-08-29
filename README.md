@@ -14,12 +14,13 @@ Download the proper binary from the releases section of the repo, [here](https:/
 ```
 
 ###Environment
-`shipyardctl` expects the following environment variables be in place in order to use it in its entirety.
+`shipyardctl` will read from the following environment variables when their corresponding CLI flags are not proivded at runtime.
 
 - `APIGEE_ORG`: Your Apigee org name
 - `APIGEE_ENVIRONMENT_NAME`: Your Apigee env name
 - `APIGEE_TOKEN`: Your JWT access token generated from Apigee credentials
 - `CLUSTER_TARGET`: The _protocol_ and _hostname_ of the k8s cluster (**default:** "https://shipyard.apigee.com")
+- `PUBLIC_KEY`: The public key of a Shipyard created environment
 
 ###Usage
 
