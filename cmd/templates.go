@@ -7,10 +7,10 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <PreFlow name="PreFlow">
         <Request>
             <Step>
-                <Name>RetainHostHeader</Name>
+                <Name>SetHostHeader</Name>
             </Step>
             <Step>
-                <Name>SetRoutingAPIKey</Name>
+                <Name>KVMGetRoutingKey</Name>
             </Step>
         </Request>
         <Response>
@@ -26,7 +26,7 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <Flows/>
     <HTTPTargetConnection>
         <Properties/>
-        <URL>https://shipyard-backend-east.production.apigeeks.net</URL>
+        <URL>{{.Target}}</URL>
     </HTTPTargetConnection>
 </TargetEndpoint>`
 
@@ -44,7 +44,7 @@ var PROXY_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </PostFlow>
     <Flows/>
     <HTTPProxyConnection>
-        <BasePath>/</BasePath>
+        <BasePath>{{.BasePath}}</BasePath>
         <Properties/>
         <VirtualHost>default</VirtualHost>
         <VirtualHost>secure</VirtualHost>
@@ -71,45 +71,42 @@ var ADD_CORS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <AssignTo createNew="false" transport="http" type="response"/>
 </AssignMessage>`
 
-var RETAIN_HOST = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AssignMessage async="false" continueOnError="false" enabled="true" name="RetainHostHeader">
-    <DisplayName>Retain Host Header for Target</DisplayName>
+var SET_HOST_HEADER = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="SetHostHeader">
+    <DisplayName>SetHostHeader</DisplayName>
     <Properties/>
     <AssignVariable>
         <Name>target.header.host</Name>
-        <Value>{{.Org}}-{{.Env}}.apigee.net</Value>
-        <Ref/>
+        <Ref>request.header.host</Ref>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <AssignTo createNew="false" transport="http" type="request"/>
 </AssignMessage>`
 
 var ROUTING_KEY = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AssignMessage async="false" continueOnError="false" enabled="true" name="SetRoutingAPIKey">
-    <DisplayName>Set Routing API Key</DisplayName>
-    <Properties/>
-    <Set>
-        <Headers>
-            <Header name="X-ROUTING-API-KEY">{{.PublicKey}}</Header>
-        </Headers>
-    </Set>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="false" transport="http" type="request"/>
-</AssignMessage>`
+<KeyValueMapOperations mapIdentifier="routing" async="false" continueOnError="false" enabled="true" name="KVMGetRoutingKey">
+  <ExpiryTimeInSecs>-1</ExpiryTimeInSecs>
+  <Scope>environment</Scope>
+  <Get assignTo="request.header.X-ROUTING-API-KEY">
+    <Key>
+      <Parameter>public-key</Parameter>
+    </Key>
+  </Get>
+</KeyValueMapOperations>`
 
 var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="1" name="{{.AppName}}">
+<APIProxy revision="1" name="{{.Name}}">
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1459886430613</CreatedAt>
     <CreatedBy>shipyard@apigee.com</CreatedBy>
-    <Description>This is a proxy for {{.AppName}} deployed on Shipyard.</Description>
-    <DisplayName>{{.AppName}}</DisplayName>
+    <Description>This is a proxy for {{.Name}}, deployed on Shipyard.</Description>
+    <DisplayName>{{.Name}}</DisplayName>
     <LastModifiedAt>1459886430613</LastModifiedAt>
     <LastModifiedBy>shipyard@apigee.com</LastModifiedBy>
     <Policies>
         <Policy>AddCors</Policy>
-        <Policy>RetainHostHeader</Policy>
-        <Policy>SetRoutingAPIKey</Policy>
+        <Policy>SetHostHeader</Policy>
+        <Policy>KVMGetRoutingKey</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
