@@ -8,8 +8,8 @@ This project is a command line interface that wraps the Shipyard build and deplo
 Download the proper binary from the releases section of the repo, [here](https://github.com/30x/shipyardctl/releases).
 
 ```sh
-> wget https://github.com/30x/shipyardctl/releases/download/v1.1.1/shipyardctl-1.1.1.darwin.amd64.go1.6.tar.gz
-> tar -xvf shipyardctl-1.1.1.darwin.amd64.go1.6.tar.gz
+> wget https://github.com/30x/shipyardctl/releases/download/v1.2.1/shipyardctl-1.2.1.darwin.amd64.go1.6.tar.gz
+> tar -xvf shipyardctl-1.2.1.darwin.amd64.go1.6.tar.gz
 > mv shipyardctl /usr/local/bin # might need sudo access
 ```
 
