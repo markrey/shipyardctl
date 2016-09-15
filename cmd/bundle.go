@@ -25,41 +25,33 @@ import (
 )
 
 type Bundle struct {
-	Org string
-	Env string
-	PublicKey string
-	AppName string
+	Name string
+	Target string
+	BasePath string
 }
 
 var savePath string
+var base string
 var fileMode os.FileMode
 
 // bundleCmd represents the bundle command
 var bundleCmd = &cobra.Command{
-	Use:   "bundle <appName>",
+	Use:   "bundle <name>",
 	Short: "generate an Edge proxy bundle",
 	Long: `This generates the appropriate API proxy bundle for an
-application built and deployed on Shipyard.
-
-The APIGEE_ORG, APIGEE_ENVIRONMENT_NAME and PUBLIC_KEY must be
-in the environment.
+environment built and deployed on Shipyard.
 
 Example of use:
 
-$ shipyardctl create bundle exampleApp --org org1 -k <pubKey> -e <envName>`,
+$ shipyardctl create bundle exampleName`,
 	Run: func(cmd *cobra.Command, args []string) {
-		RequireOrgName()
-
 		if len(args) < 1 {
 			fmt.Println("Missing required arg.")
 			fmt.Println("Usage:\t\n"+cmd.Use)
 			return
 		}
 
-		appName := args[0]
-
-		requirePubKey()
-		requireEnvName()
+		name := args[0]
 
 		// make a temp dir
 		tmpdir, err := ioutil.TempDir("", orgName+"_"+envName)
@@ -104,16 +96,22 @@ $ shipyardctl create bundle exampleApp --org org1 -k <pubKey> -e <envName>`,
 		}
 		checkError(err, "Unable to make policies dir")
 
+		target := "https://shipyard-backend-east.production.apigeeks.net" // default to production
+		if clusterTarget == "https://shipyard.e2e.apigee.net" {
+			// targeting e2e
+			target = "https://shipyard-backend-west.e2e.apigee.net"
+		}
+
 		// bundle user info for templates
-		bundle := Bundle{orgName, envName, pubKey, appName}
+		bundle := Bundle{name, target, base}
 
 		// example.xml --> ./apiproxy/
-		proxy_xml, err := os.Create(filepath.Join(dir, appName+".xml"))
+		proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
 		err = proxy_xml.Chmod(fileMode)
 		if verbose {
-			fmt.Println("Creating file '"+appName+".xml'")
+			fmt.Println("Creating file '"+name+".xml'")
 		}
-		checkError(err, "Unable to make "+appName+".xml file")
+		checkError(err, "Unable to make "+name+".xml file")
 
 		proxyTmpl, err := template.New("PROXY").Parse(PROXY_XML)
 		if err != nil { panic(err) }
@@ -133,30 +131,30 @@ $ shipyardctl create bundle exampleApp --org org1 -k <pubKey> -e <envName>`,
 		err = addCors.Execute(add_cors_xml, bundle)
 		if err != nil { panic(err) }
 
-		// RetainHostHeaders.xml --> ./apiproxy/policies
-		retain_host_headers_xml, err := os.Create(filepath.Join(policiesDirPath, "RetainHostHeaders.xml"))
-		err = retain_host_headers_xml.Chmod(fileMode)
+		// SetHostHeader.xml --> ./apiproxy/policies
+		set_host_headers_xml, err := os.Create(filepath.Join(policiesDirPath, "SetHostHeader.xml"))
+		err = set_host_headers_xml.Chmod(fileMode)
 		if verbose {
-			fmt.Println("Creating file 'policies/RetainHostHeaders.xml'")
+			fmt.Println("Creating file 'policies/SetHostHeader.xml'")
 		}
-		checkError(err, "Unable to make RetainHostHeaders.xml file")
+		checkError(err, "Unable to make SetHostHeader.xml file")
 
-		retainHost, err := template.New("RETAIN_HOST").Parse(RETAIN_HOST)
+		setHost, err := template.New("SET_HOST_HEADER").Parse(SET_HOST_HEADER)
 		if err != nil { panic(err) }
-		err = retainHost.Execute(retain_host_headers_xml, bundle)
+		err = setHost.Execute(set_host_headers_xml, bundle)
 		if err != nil { panic(err) }
 
-		// SetRoutingAPIKey.xml --> ./apiproxy/policies
-		set_routing_key_xml, err := os.Create(filepath.Join(policiesDirPath, "SetRoutingAPIKey.xml"))
-		err = set_routing_key_xml.Chmod(fileMode)
+		// KVMGetRoutingKey.xml --> ./apiproxy/policies
+		kvm_routing_key_xml, err := os.Create(filepath.Join(policiesDirPath, "KVMGetRoutingKey.xml"))
+		err = kvm_routing_key_xml.Chmod(fileMode)
 		if verbose {
-			fmt.Println("Creating file 'policies/SetRoutingAPIKey.xml'")
+			fmt.Println("Creating file 'policies/KVMGetRoutingKey.xml'")
 		}
-		checkError(err, "Unable to make SetRoutingAPIKey.xml file")
+		checkError(err, "Unable to make KVMGetRoutingKey.xml file")
 
 		routingKey, err := template.New("ROUTING_KEY").Parse(ROUTING_KEY)
 		if err != nil { panic(err) }
-		err = routingKey.Execute(set_routing_key_xml, bundle)
+		err = routingKey.Execute(kvm_routing_key_xml, bundle)
 		if err != nil { panic(err) }
 
 
@@ -221,31 +219,7 @@ func checkError(err error, customMsg string) {
 func init() {
 	createCmd.AddCommand(bundleCmd)
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
-	bundleCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
-	bundleCmd.Flags().StringVarP(&pubKey, "pubKey", "k", "", "Environment's public key")
-	bundleCmd.Flags().StringVarP(&envName, "envName", "e", "", "Apigee environment name")
+	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "/", "Proxy base path. Defaults to /")
 
 	fileMode = 0755
-}
-
-func requirePubKey() {
-	if pubKey == "" {
-		if pubKey = os.Getenv("PUBLIC_KEY"); pubKey == "" {
-			fmt.Println("Missing required flag '--pubKey', or place in environment as PUBLIC_KEY.")
-			os.Exit(1)
-		}
-	}
-
-	return
-}
-
-func requireEnvName() {
-	if envName == "" {
-		if envName = os.Getenv("APIGEE_ENVIRONMENT_NAME"); envName == "" {
-			fmt.Println("Missing required flag '--envName', or place in environment as APIGEE_ENVIRONMENT_NAME.")
-			os.Exit(1)
-		}
-	}
-
-	return
 }
