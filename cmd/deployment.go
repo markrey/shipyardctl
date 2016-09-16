@@ -54,6 +54,8 @@ const (
 	VALUE = 1
 )
 
+var previous bool
+
 // represents the get deployment command
 var deploymentCmd = &cobra.Command{
 	Use:   "deployment <environmentName> <deploymentName>",
@@ -342,8 +344,14 @@ $ shipyardctl get logs org1:env1 dep1 --token <token>`,
 		// get deployment name from arguments
 		depName = args[1]
 
+		var req *http.Request
+		var err error
 		// build API call
-		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+		if previous {
+			req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs?previous=true", nil)
+		} else {
+			req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+		}
 		if verbose {
 			PrintVerboseRequest(req)
 		}
@@ -373,6 +381,7 @@ func init() {
 	deploymentCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all deployments")
 
 	getCmd.AddCommand(logsCmd)
+	logsCmd.Flags().BoolVarP(&previous, "previous", "p", false, "used to retrieve previous container's logs")
 
 	deleteCmd.AddCommand(deleteDeploymentCmd)
 	createCmd.AddCommand(createDeploymentCmd)
