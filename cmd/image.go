@@ -27,6 +27,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var nodeVersion string
+
 // imageCmd represents the image command
 var imageCmd = &cobra.Command{
 	Use:   "image <appName> <revision> <publicPath> <zipPath>",
@@ -78,6 +80,7 @@ $ shipyardctl create image example 1 "9000:/example" "./path/to/zipped/app --org
 		writer.WriteField("revision", revision)
 		writer.WriteField("name", appName)
 		writer.WriteField("publicPath", publicPath)
+		writer.WriteField("nodeVersion", nodeVersion)
 
 		err = writer.Close()
 		if err != nil {
@@ -253,6 +256,7 @@ func init() {
 	createCmd.AddCommand(imageCmd)
 	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	imageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+	imageCmd.Flags().StringVarP(&nodeVersion, "node-version", "n", "4", "Node version to use in base image.")
 
 	getCmd.AddCommand(getImageCmd)
 	getImageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
