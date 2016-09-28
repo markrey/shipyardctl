@@ -81,6 +81,9 @@ _Note: this token expires quickly, so make sure to refresh it about every 30 min
 The build command takes the name of your application, the revision number, the public port/path to reach your application
 and the path to your zipped Node app.
 
+**This command defaults to using Node.js LTS (v4) unless otherwise specified with the `--node-version` flag.**
+**A list of available versions can be found [here](https://github.com/mhart/alpine-node#minimal-nodejs-docker-images-18mb-or-67mb-compressed). Provide the desired image tag as the `--node-version`.**
+
 _Note: there must be a valid package.json in the root of zipped application_
 
 **Verify image creation**
