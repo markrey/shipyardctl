@@ -120,7 +120,7 @@ $ shipyardctl delete environment org1:env1 --token <token>`,
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nDeletion of " + envName + " was sucessful\n")
+			fmt.Println("\nDeletion of " + envName + " was successful\n")
 		} else {
 			CheckIfAuthn(response.StatusCode)
 		}
@@ -180,7 +180,7 @@ $ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" -
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nCreation of " + envName + " was sucessful\n")
+			fmt.Println("\nCreation of " + envName + " was successful\n")
 		} else {
 			CheckIfAuthn(response.StatusCode)
 		}
@@ -240,7 +240,7 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nPatch of " + envName + " was sucessful\n")
+			fmt.Println("\nPatch of " + envName + " was successful\n")
 		} else {
 			CheckIfAuthn(response.StatusCode)
 		}
