@@ -58,31 +58,45 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 		}
 
 		envName = args[0]
-		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
-		if verbose {
-			PrintVerboseRequest(req)
+		status := getEnvironment(envName)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := getEnvironment(envName)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+func getEnvironment(envName string) int {
+	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		defer response.Body.Close()
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
-		CheckIfAuthn(response.StatusCode)
+	defer response.Body.Close()
 
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 var deleteEnvCmd = &cobra.Command{
@@ -102,34 +116,48 @@ $ shipyardctl delete environment org1:env1 --token <token>`,
 		}
 
 		envName = args[0]
-		req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName, nil)
-		if verbose {
-			PrintVerboseRequest(req)
-		}
-
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if verbose {
-				PrintVerboseResponse(response)
+		status := deleteEnv(envName)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := deleteEnv(envName)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
 			}
-
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nDeletion of " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
-		}
-
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
 		}
 	},
+}
+
+func deleteEnv(envName string) int {
+	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+			PrintVerboseResponse(response)
+		}
+
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nDeletion of " + envName + " was successful\n")
+	} else {
+		CheckIfAuthn(response.StatusCode)
+	}
+
+	_, err = io.Copy(os.Stdout, response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return response.StatusCode
 }
 
 var createEnvCmd = &cobra.Command{
@@ -159,37 +187,52 @@ $ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" -
 		}
 
 		hostnames := args[1:]
-		js, _ := json.Marshal(Environment{envName, hostnames})
 
-		req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
-
-		if verbose {
-			PrintVerboseRequest(req)
-		}
-
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if verbose {
-				PrintVerboseResponse(response)
+		status := createEnv(envName, hostnames)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := createEnv(envName, hostnames)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
 			}
-
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nCreation of " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
 		}
+	},
+}
 
+func createEnv(envName string, hostnames []string) int {
+	js, _ := json.Marshal(Environment{envName, hostnames})
+
+	req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
+
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nCreation of " + envName + " was successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 var patchEnvCmd = &cobra.Command{
@@ -219,36 +262,51 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 		}
 
 		hostnames := args[1:]
-		js, _ := json.Marshal(EnvironmentPatch{hostnames})
-
-		req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
-
-		if verbose {
-			PrintVerboseRequest(req)
-		}
-
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if verbose {
-				PrintVerboseResponse(response)
+		status := patchEnv(envName, hostnames)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := patchEnv(envName, hostnames)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
 			}
-
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nPatch of " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
 		}
+	},
+}
+
+func patchEnv(envName string, hostnames []string) int {
+	js, _ := json.Marshal(EnvironmentPatch{hostnames})
+
+	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
+
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nPatch of " + envName + " was successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 func init() {

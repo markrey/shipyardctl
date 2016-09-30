@@ -78,29 +78,14 @@ $ shipyardctl get deployment dep1 --token <token>`,
 
 		// get all of the active deployments
 		if all {
-			req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments" , nil)
-			if verbose {
-				PrintVerboseRequest(req)
-			}
-
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
-			defer response.Body.Close()
-
-			CheckIfAuthn(response.StatusCode)
-
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
+			status := getDeploymentAll(envName)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getDeploymentAll(envName)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
 		} else { // get active deployment by name
 			if len(args) < 2 {
@@ -112,34 +97,77 @@ $ shipyardctl get deployment dep1 --token <token>`,
 			// get deployment name from arguments
 			depName = args[1]
 
-			// build API call
-			req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
-			if verbose {
-				PrintVerboseRequest(req)
+			status := getDeploymentNamed(envName, depName)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getDeploymentNamed(envName, depName)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
+		}
+	},
+}
 
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
+func getDeploymentNamed(envName string, depName string) int {
+	// build API call
+	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-			if err != nil {
-				log.Fatal(err)
-			}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-			// dump response body to stdout
-			defer response.Body.Close()
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
-			CheckIfAuthn(response.StatusCode)
+	// dump response body to stdout
+	defer response.Body.Close()
 
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return response.StatusCode
+}
+
+func getDeploymentAll(envName string) int {
+	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments" , nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
+		req.Header.Set("Authorization", "Bearer " + authToken)
+		response, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
+
+		defer response.Body.Close()
+
+		if response.StatusCode != 401 {
 			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-	},
+
+		return response.StatusCode
 }
 
 var deleteDeploymentCmd = &cobra.Command{
@@ -170,36 +198,50 @@ $ shipyardctl delete deployment org1:env1 dep1 --token <token>`,
 
 		depName = args[1]
 
-		// build API call URL
-		req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
-		if verbose {
-			PrintVerboseRequest(req)
+		status := deleteDeployment(envName, depName)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := deleteDeployment(envName, depName)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+func deleteDeployment(envName string, depName string) int {
+	// build API call URL
+	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// dump response body to stdout
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nDeletion of " + depName + " in " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
-		}
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
+	// dump response body to stdout
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nDeletion of " + depName + " in " + envName + " was successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 // deployment creation command
@@ -233,44 +275,58 @@ $ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name"
 		ptsUrl := args[5]
 		vars := parseEnvVars()
 
-		// prepare arguments in a Deployment struct and Marshal into JSON
-		js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl, vars})
-		if err != nil {
-			log.Fatal(err)
+		status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		// build API call with request body (deployment information)
-		req, err := http.NewRequest("POST", clusterTarget + enroberPath + "/" + envName + "/deployments", bytes.NewBuffer(js))
+func createDeployment(envName string, depName string, publicHost string, privateHost string, replicas int64, ptsUrl string, vars []EnvVar) int {
+	// prepare arguments in a Deployment struct and Marshal into JSON
+	js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl, vars})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		if verbose {
-			PrintVerboseRequest(req)
-		}
+	// build API call with request body (deployment information)
+	req, err := http.NewRequest("POST", clusterTarget + enroberPath + "/" + envName + "/deployments", bytes.NewBuffer(js))
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		req.Header.Set("Content-Type", "application/json")
-		response, err := http.DefaultClient.Do(req)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// dump response to stdout
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nCreation of " + depName + " in " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
-		}
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
+	// dump response to stdout
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nCreation of " + depName + " in " + envName + " was successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 // patch/update deployment command
@@ -297,38 +353,52 @@ $ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "t
 		depName = args[1]
 		updateData := args[2]
 
-		// build API call
-		// the update data will come in from command line as a JSON string
-		req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
-
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		if verbose {
-			PrintVerboseRequest(req)
+		status := patchDeployment(envName, depName, updateData)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := patchDeployment(envName, depName, updateData)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		req.Header.Set("Content-Type", "application/json")
-		response, err := http.DefaultClient.Do(req)
+func patchDeployment(envName string, depName string, updateData string) int {
+	// build API call
+	// the update data will come in from command line as a JSON string
+	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	req.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(req)
 
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nPatch of " + depName + " in " + envName + " was successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		fmt.Println("\nPatch of " + depName + " in " + envName + " was successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 var logsCmd = &cobra.Command{
@@ -359,39 +429,53 @@ $ shipyardctl get logs org1:env1 dep1 --token <token>`,
 		// get deployment name from arguments
 		depName = args[1]
 
-		var req *http.Request
-		var err error
-		// build API call
-		if previous {
-			req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs?previous=true", nil)
-		} else {
-			req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+		status := getDeploymentLogs(envName, depName)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := getDeploymentLogs(envName, depName)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
-		if verbose {
-			PrintVerboseRequest(req)
-		}
+	},
+}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+func getDeploymentLogs(envName string, depName string) int {
+	var req *http.Request
+	var err error
+	// build API call
+	if previous {
+		req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs?previous=true", nil)
+	} else {
+		req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+	}
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// dump response body to stdout
-		defer response.Body.Close()
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
-		CheckIfAuthn(response.StatusCode)
+	// dump response body to stdout
+	defer response.Body.Close()
 
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 func init() {

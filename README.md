@@ -149,7 +149,7 @@ Successfully wrote credentials to /my/home/directory/.shipyardctl/config
 This logs you in to a `shipyardctl` session by retrieving an auth token with your Apigee credentials and saving it to a
 configuration file placed in your home directory.
 
-> _Note: this token expires quickly, so make sure to refresh it about every 30 minutes._
+> _Note: this token expires quickly, so every dependant command will prompt you to refresh your login and rety the command, when necessary._
 
 **2. Build an image of a Node.js app**
 

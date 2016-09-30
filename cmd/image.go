@@ -57,70 +57,84 @@ $ shipyardctl create image example 1 "9000:/example" "./path/to/zipped/app --org
 		publicPath := args[2]
 		zipPath := args[3]
 
-		zip, err := os.Open(zipPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer zip.Close()
-
-		body := &bytes.Buffer{}
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", filepath.Base(zipPath))
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = io.Copy(part, zip)
-
-		if len(envVars) > 0 {
-			for i := range envVars {
-				writer.WriteField("envVar", envVars[i])
+		status := createImage(appName, revision, publicPath, zipPath)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status = createImage(appName, revision, publicPath, zipPath)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
 			}
 		}
+	},
+}
 
-		writer.WriteField("revision", revision)
-		writer.WriteField("name", appName)
-		writer.WriteField("publicPath", publicPath)
-		writer.WriteField("nodeVersion", nodeVersion)
+func createImage(appName string, revision string, publicPath string, zipPath string) int {
+	zip, err := os.Open(zipPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer zip.Close()
 
-		err = writer.Close()
-		if err != nil {
-			log.Fatal(err)
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(zipPath))
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = io.Copy(part, zip)
+
+	if len(envVars) > 0 {
+		for i := range envVars {
+			writer.WriteField("envVar", envVars[i])
 		}
+	}
 
-		req, err := http.NewRequest("POST", clusterTarget + basePath, body)
-		if err != nil {
-			log.Fatal(err)
-		}
+	writer.WriteField("revision", revision)
+	writer.WriteField("name", appName)
+	writer.WriteField("publicPath", publicPath)
+	writer.WriteField("nodeVersion", nodeVersion)
 
-		if verbose {
-			PrintVerboseRequest(req)
-		}
+	err = writer.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		req.Header.Add("Content-Type", writer.FormDataContentType())
-		response, err := http.DefaultClient.Do(req)
+	req, err := http.NewRequest("POST", clusterTarget + basePath, body)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	response, err := http.DefaultClient.Do(req)
 
-		// dump response to stdout
-		defer response.Body.Close()
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			fmt.Println("\nImage build successful\n")
-		} else {
-			CheckIfAuthn(response.StatusCode)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	// dump response to stdout
+	defer response.Body.Close()
+	if response.StatusCode == 201 {
+		fmt.Println("\nImage build successful\n")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 var getImageCmd = &cobra.Command{
@@ -150,29 +164,14 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 
 			appName := args[0]
 
-			req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName, nil)
-			if verbose {
-				PrintVerboseRequest(req)
-			}
-
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
-			defer response.Body.Close()
-
-			CheckIfAuthn(response.StatusCode)
-
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
+			status := getImageAll(appName)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getImageAll(appName)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
 		} else {
 			if len(args) < 2 {
@@ -184,32 +183,75 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 			appName := args[0]
 			revision := args[1]
 
-			req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
-			if verbose {
-				PrintVerboseRequest(req)
-			}
-
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
-			defer response.Body.Close()
-
-			CheckIfAuthn(response.StatusCode)
-
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
+			status := getImageRevision(appName, revision)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getImageRevision(appName, revision)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
 		}
 	},
+}
+
+func getImageRevision(appName string, revision string) int {
+	req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return response.StatusCode
+}
+
+func getImageAll(appName string) int {
+	req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return response.StatusCode
 }
 
 var deleteImageCmd = &cobra.Command{
@@ -236,31 +278,49 @@ $ shipyardctl delete image example 1 --org org1 --token <token>`,
 		appName := args[0]
 		revision := args[1]
 
-		req, err := http.NewRequest("DELETE", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
-		if verbose {
-			PrintVerboseRequest(req)
+		status := deleteImage(appName, revision)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := deleteImage(appName, revision)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+func deleteImage(appName string, revision string) int {
+	req, err := http.NewRequest("DELETE", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		defer response.Body.Close()
+	if verbose {
+		PrintVerboseResponse(response)
+	}
 
-		CheckIfAuthn(response.StatusCode)
+	defer response.Body.Close()
 
+	if response.StatusCode == 200 {
+		fmt.Println("Deletion of image successful.")
+	}
+
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 func init() {
