@@ -148,13 +148,13 @@ func deleteEnv(envName string) int {
 	defer response.Body.Close()
 	if response.StatusCode >= 200 && response.StatusCode < 300 {
 		fmt.Println("\nDeletion of " + envName + " was successful\n")
-	} else {
-		CheckIfAuthn(response.StatusCode)
 	}
 
-	_, err = io.Copy(os.Stdout, response.Body)
-	if err != nil {
-		log.Fatal(err)
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return response.StatusCode
