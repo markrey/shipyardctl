@@ -200,12 +200,16 @@ func RequireAuthToken() {
 }
 
 // CheckIfAuthn checks if the API call was authenticated or not
-func CheckIfAuthn(status int) {
+func CheckIfAuthn(status int) bool {
 	if status == 401 {
 		fmt.Println("Your token has expired. Please login again.")
-		fmt.Println("shipyardctl login -u", config.GetCurrentUsername())
-		os.Exit(-1)
+		username = config.GetCurrentUsername()
+		Login()
+		authToken = config.GetCurrentToken()
+		return false
 	}
+
+	return true
 }
 
 // RequireOrgName used to short circuit commands

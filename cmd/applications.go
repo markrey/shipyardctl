@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"log"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -38,28 +39,44 @@ $ shipyardctl get applications --org org1 --token <token>`,
 		RequireOrgName()
 		MakeBuildPath()
 
-		req, err := http.NewRequest("GET", clusterTarget + basePath, nil)
-		if verbose {
-			PrintVerboseRequest(req)
+		status := getApplications()
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := getApplications()
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
 		}
+	},
+}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+func getApplications() int {
+	req, err := http.NewRequest("GET", clusterTarget + basePath, nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	req.Header.Set("Authorization", "Bearer " + authToken)
+	response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		defer response.Body.Close()
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-	},
+	}
+
+	return response.StatusCode
 }
 
 func init() {
