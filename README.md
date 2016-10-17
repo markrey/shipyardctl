@@ -160,7 +160,7 @@ This command consumes the Node.js application zip, builds it into an image, stor
 > export PTS_URL="<copy the Pod Template Spec URL generated and output by the build image command>"
 ```
 The build command takes the name of your application, the revision number, the public port/path to reach your application
-and the path to your zipped Node app.
+and the path to your zipped Node app. If you want to bake an environment variable into the image, provide them individually with `--env=MY_VAR=VALUE` or `-e MY_VAR=VAL`. These values can be overwritten by specifying a variable with the same name but different value when deploying the image (covered further down).
 
 **This command defaults to using Node.js LTS (v4) unless otherwise specified with the `--node-version` flag.**
 **A list of available versions can be found [here](https://github.com/mhart/alpine-node#minimal-nodejs-docker-images-18mb-or-67mb-compressed). Provide the desired image tag as the `--node-version`.**
