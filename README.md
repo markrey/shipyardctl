@@ -236,7 +236,7 @@ This includes:
 
 **11. Create Apigee Edge Proxy bundle**
 ```sh
-> shipyardctl create bundle "myEnvironment" --save ~/Desktop
+> shipyardctl create bundle "myProxy" --save ~/Desktop
 ```
 This command, given the desired proxy name, will generate a valid proxy bundle for the environment deployed on Shipyard. It will be able to service
 all applications deployed to the Shipyard enviroment associated with the working Edge organization and environment.
