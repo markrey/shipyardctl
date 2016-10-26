@@ -5,14 +5,7 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <Description/>
     <FaultRules/>
     <PreFlow name="PreFlow">
-        <Request>
-            <Step>
-                <Name>SetHostHeader</Name>
-            </Step>
-            <Step>
-                <Name>KVMGetRoutingKey</Name>
-            </Step>
-        </Request>
+        <Request/>
         <Response>
             <Step>
                 <Name>AddCors</Name>
@@ -24,10 +17,9 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <Response/>
     </PostFlow>
     <Flows/>
-    <HTTPTargetConnection>
-        <Properties/>
-        <URL>{{.Target}}</URL>
-    </HTTPTargetConnection>
+    <ScriptContainer>
+        <ResourceURL>{{.PublicPath}}</ResourceURL>
+    </ScriptContainer>
 </TargetEndpoint>`
 
 var PROXY_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -71,29 +63,6 @@ var ADD_CORS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <AssignTo createNew="false" transport="http" type="response"/>
 </AssignMessage>`
 
-var SET_HOST_HEADER = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AssignMessage async="false" continueOnError="false" enabled="true" name="SetHostHeader">
-    <DisplayName>SetHostHeader</DisplayName>
-    <Properties/>
-    <AssignVariable>
-        <Name>target.header.host</Name>
-        <Ref>request.header.host</Ref>
-    </AssignVariable>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="false" transport="http" type="request"/>
-</AssignMessage>`
-
-var ROUTING_KEY = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<KeyValueMapOperations mapIdentifier="routing" async="false" continueOnError="false" enabled="true" name="KVMGetRoutingKey">
-  <ExpiryTimeInSecs>-1</ExpiryTimeInSecs>
-  <Scope>environment</Scope>
-  <Get assignTo="request.header.X-ROUTING-API-KEY">
-    <Key>
-      <Parameter>public-key</Parameter>
-    </Key>
-  </Get>
-</KeyValueMapOperations>`
-
 var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <APIProxy revision="1" name="{{.Name}}">
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
@@ -105,8 +74,6 @@ var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <LastModifiedBy>shipyard@apigee.com</LastModifiedBy>
     <Policies>
         <Policy>AddCors</Policy>
-        <Policy>SetHostHeader</Policy>
-        <Policy>KVMGetRoutingKey</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
