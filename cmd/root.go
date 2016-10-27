@@ -185,7 +185,6 @@ func RequireAuthToken() {
 					authToken = config.GetCurrentToken()
 				}
 
-				fmt.Println("Using auth token from config file.")
 				return
 			} else {
 				fmt.Println("No config file loaded.")

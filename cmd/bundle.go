@@ -26,12 +26,13 @@ import (
 
 type Bundle struct {
 	Name string
-	Target string
 	BasePath string
+	PublicPath string
 }
 
 var savePath string
 var base string
+var publicPath string
 var fileMode os.FileMode
 
 // bundleCmd represents the bundle command
@@ -96,14 +97,12 @@ $ shipyardctl create bundle exampleName`,
 		}
 		checkError(err, "Unable to make policies dir")
 
-		target := "https://shipyard-backend-east.production.apigeeks.net" // default to production
-		if clusterTarget == "https://shipyard.e2e.apigee.net" {
-			// targeting e2e
-			target = "https://shipyard-backend-west.e2e.apigee.net"
+		// bundle user info for templates
+		if base == "" {
+			base = publicPath
 		}
 
-		// bundle user info for templates
-		bundle := Bundle{name, target, base}
+		bundle := Bundle{name, base, publicPath}
 
 		// example.xml --> ./apiproxy/
 		proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
@@ -130,33 +129,6 @@ $ shipyardctl create bundle exampleName`,
 		if err != nil { panic(err) }
 		err = addCors.Execute(add_cors_xml, bundle)
 		if err != nil { panic(err) }
-
-		// SetHostHeader.xml --> ./apiproxy/policies
-		set_host_headers_xml, err := os.Create(filepath.Join(policiesDirPath, "SetHostHeader.xml"))
-		err = set_host_headers_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file 'policies/SetHostHeader.xml'")
-		}
-		checkError(err, "Unable to make SetHostHeader.xml file")
-
-		setHost, err := template.New("SET_HOST_HEADER").Parse(SET_HOST_HEADER)
-		if err != nil { panic(err) }
-		err = setHost.Execute(set_host_headers_xml, bundle)
-		if err != nil { panic(err) }
-
-		// KVMGetRoutingKey.xml --> ./apiproxy/policies
-		kvm_routing_key_xml, err := os.Create(filepath.Join(policiesDirPath, "KVMGetRoutingKey.xml"))
-		err = kvm_routing_key_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file 'policies/KVMGetRoutingKey.xml'")
-		}
-		checkError(err, "Unable to make KVMGetRoutingKey.xml file")
-
-		routingKey, err := template.New("ROUTING_KEY").Parse(ROUTING_KEY)
-		if err != nil { panic(err) }
-		err = routingKey.Execute(kvm_routing_key_xml, bundle)
-		if err != nil { panic(err) }
-
 
 		// default.xml --> ./apiproxy/proxies && ./apiproxy/targets
 		proxy_default_xml, err := os.Create(filepath.Join(proxiesDirPath, "default.xml"))
@@ -219,7 +191,8 @@ func checkError(err error, customMsg string) {
 func init() {
 	createCmd.AddCommand(bundleCmd)
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
-	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "/", "Proxy base path. Defaults to /")
+	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "", "Proxy base path. Defaults to /")
+	bundleCmd.Flags().StringVarP(&publicPath, "publicPath", "p", "/", "Application public path. Defaults to /")
 
 	fileMode = 0755
 }
