@@ -1,33 +1,45 @@
 #Format is MAJOR . MINOR . PATCH
 
 VERSION=1.3.0
-GO_VERSION=1.6
+GO_VERSION=1.7
 
-release: package-linux package-windows package-darwin
+release: dir-build package-linux package-windows package-darwin
 
-package-linux: build-linux tar-linux
+package-linux: dir-linux build-linux tar-linux
 
-package-windows: build-windows tar-windows
+package-windows: dir-windows build-windows tar-windows
 
-package-darwin: build-darwin tar-darwin
+package-darwin: dir-darwin build-darwin tar-darwin
+
+dir-build:
+	mkdir build
 
 build-linux:
-	GOOS=linux GOARCH=amd64 go build -o shipyardctl
+	GOOS=linux GOARCH=amd64 go build -o build/linux/shipyardctl
+
+dir-linux:
+	mkdir build/linux
 
 tar-linux:
-	tar -zcvf shipyardctl-$(VERSION).linux.amd64.go$(GO_VERSION).tar.gz shipyardctl
+	tar -zcvf build/linux/shipyardctl-$(VERSION).linux.amd64.go$(GO_VERSION).tar.gz build/linux/shipyardctl
 
 build-windows:
-	GOOS=windows GOARCH=amd64 go build -o shipyardctl.exe
+	GOOS=windows GOARCH=amd64 go build -o build/windows/shipyardctl.exe
+
+dir-windows:
+	mkdir build/windows
 
 tar-windows:
-	tar -zcvf shipyardctl-$(VERSION).windows.amd64.go$(GO_VERSION).tar.gz shipyardctl
+	tar -zcvf build/windows/shipyardctl-$(VERSION).windows.amd64.go$(GO_VERSION).tar.gz build/windows/shipyardctl.exe
 
 build-darwin:
-	GOOS=darwin GOARCH=amd64 go build -o shipyardctl
+	GOOS=darwin GOARCH=amd64 go build -o build/darwin/shipyardctl
 
 tar-darwin:
-	tar -zcvf shipyardctl-$(VERSION).darwin.amd64.go$(GO_VERSION).tar.gz shipyardctl
+	tar -zcvf build/darwin/shipyardctl-$(VERSION).darwin.amd64.go$(GO_VERSION).tar.gz build/darwin/shipyardctl
+
+dir-darwin:
+	mkdir build/darwin
 
 clean:
-	rm shipyardctl shipyardctl.exe *.tar.gz
+	rm -r build
