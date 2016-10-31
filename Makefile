@@ -21,7 +21,7 @@ dir-linux:
 	mkdir build/linux
 
 zip-linux:
-	zip -r build/linux/shipyardctl-$(VERSION).linux.amd64.go$(GO_VERSION).zip build/linux/shipyardctl
+	zip -rj build/linux/shipyardctl-$(VERSION).linux.amd64.go$(GO_VERSION).zip build/linux/shipyardctl
 
 build-windows:
 	GOOS=windows GOARCH=amd64 go build -o build/windows/shipyardctl.exe
@@ -30,13 +30,13 @@ dir-windows:
 	mkdir build/windows
 
 zip-windows:
-	zip -r build/windows/shipyardctl-$(VERSION).windows.amd64.go$(GO_VERSION).zip build/windows/shipyardctl.exe
+	zip -rj build/windows/shipyardctl-$(VERSION).windows.amd64.go$(GO_VERSION).zip build/windows/shipyardctl.exe
 
 build-darwin:
 	GOOS=darwin GOARCH=amd64 go build -o build/darwin/shipyardctl
 
 zip-darwin:
-	zip -r build/darwin/shipyardctl-$(VERSION).darwin.amd64.go$(GO_VERSION).zip build/darwin/shipyardctl
+	zip -rj build/darwin/shipyardctl-$(VERSION).darwin.amd64.go$(GO_VERSION).zip build/darwin/shipyardctl
 
 dir-darwin:
 	mkdir build/darwin
