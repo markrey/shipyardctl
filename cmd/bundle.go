@@ -20,6 +20,7 @@ import (
 	"os"
 	"io/ioutil"
 	"path/filepath"
+	"github.com/30x/zipper"
 
 	"github.com/spf13/cobra"
 )
@@ -154,16 +155,20 @@ $ shipyardctl create bundle exampleName`,
 		err = targetEndpoint.Execute(target_default_xml, bundle)
 		if err != nil { panic(err) }
 
+		zipDir := filepath.Join(tmpdir, name+".zip")
+		err = zipper.Archive(dir, zipDir)
+		if err != nil { panic(err) }
+
 		// move zip to designated savePath
 		if savePath != "" {
-			err = os.Rename(dir, filepath.Join(savePath, "apiproxy"))
+			err = os.Rename(zipDir, filepath.Join(savePath, name+".zip"))
 			if verbose {
 				fmt.Println("Moving proxy folder to "+savePath)
 			}
 			checkError(err, "Unable to move apiproxy to target save directory")
 		} else { // move apiproxy from tmpdir to cwd
 			cwd, err := os.Getwd()
-			err = os.Rename(dir, filepath.Join(cwd, "apiproxy"))
+			err = os.Rename(zipDir, filepath.Join(cwd, name+".zip"))
 			if verbose {
 				fmt.Println("Moving proxy folder to CWD")
 			}
@@ -183,7 +188,7 @@ func checkError(err error, customMsg string) {
 			fmt.Println(customMsg)
 		}
 
-		fmt.Println("\n%v\n", err)
+		fmt.Printf("\n%v\n", err)
 		os.Exit(1)
 	}
 }
