@@ -42,10 +42,7 @@ type Deployment struct {
 	EnvVars []EnvVar
 }
 
-type DeploymentPatch struct {
-	PublicHosts string
-	PrivateHosts string
-	Replicas int64
+type DeploymentImageUpdate struct {
 	PtsUrl string
 }
 
@@ -97,10 +94,10 @@ $ shipyardctl get deployment dep1 --token <token>`,
 			// get deployment name from arguments
 			depName = args[1]
 
-			status := getDeploymentNamed(envName, depName)
+			status := getDeploymentNamed(envName, depName, true)
 			if !CheckIfAuthn(status) {
 				// retry once more
-				status := getDeploymentNamed(envName, depName)
+				status := getDeploymentNamed(envName, depName, true)
 				if status == 401 {
 					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 					fmt.Println("Command failed.")
@@ -110,7 +107,7 @@ $ shipyardctl get deployment dep1 --token <token>`,
 	},
 }
 
-func getDeploymentNamed(envName string, depName string) int {
+func getDeploymentNamed(envName string, depName string, printBody bool) int {
 	// build API call
 	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
 	if verbose {
@@ -131,7 +128,7 @@ func getDeploymentNamed(envName string, depName string) int {
 	// dump response body to stdout
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody{
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -275,19 +272,23 @@ $ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name"
 		ptsUrl := args[5]
 		vars := parseEnvVars()
 
-		status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+		status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+			status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
 		}
+
+		if status == 201 {
+			fmt.Println("\nCreation of " + depName + " in " + envName + " was successful")
+		}
 	},
 }
 
-func createDeployment(envName string, depName string, publicHost string, privateHost string, replicas int64, ptsUrl string, vars []EnvVar) int {
+func createDeployment(envName string, depName string, publicHost string, privateHost string, replicas int64, ptsUrl string, vars []EnvVar, printBody bool) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
 	js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl, vars})
 	if err != nil {
@@ -315,11 +316,8 @@ func createDeployment(envName string, depName string, publicHost string, private
 
 	// dump response to stdout
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nCreation of " + depName + " in " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -353,19 +351,22 @@ $ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "t
 		depName = args[1]
 		updateData := args[2]
 
-		status := patchDeployment(envName, depName, updateData)
+		status := patchDeployment(envName, depName, updateData, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := patchDeployment(envName, depName, updateData)
+			status := patchDeployment(envName, depName, updateData, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
 		}
+		if status >= 200 && status < 300 {
+			fmt.Println("\nPatch of " + depName + " in " + envName + " was successful\n")
+		}
 	},
 }
 
-func patchDeployment(envName string, depName string, updateData string) int {
+func patchDeployment(envName string, depName string, updateData string, printBody bool) int {
 	// build API call
 	// the update data will come in from command line as a JSON string
 	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
@@ -387,11 +388,8 @@ func patchDeployment(envName string, depName string, updateData string) int {
 	}
 
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nPatch of " + depName + " in " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)

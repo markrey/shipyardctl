@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"github.com/30x/zipper"
+	"github.com/30x/shipyardctl/utils"
+	"github.com/30x/shipyardctl/mgmt"
 
 	"github.com/spf13/cobra"
 )
@@ -35,6 +37,67 @@ var savePath string
 var base string
 var publicPath string
 var fileMode os.FileMode
+
+var uploadBundleCmd = &cobra.Command{
+	Use:   "upload-bundle",
+	Short: "upload an Edge proxy bundle",
+	Long: `This uploads the target API proxy bundle archive.
+
+Example of use:
+
+$ shipyardctl upload-bundle -o myOrg -e myEnv -z /path/to/bundle.zip -n proxyName`,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := uploadProxy(org, env, name, zipPath)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	},
+	PreRunE: func(cmd * cobra.Command, args []string) error {
+		RequireAuthToken()
+
+		if org == "" {
+			return fmt.Errorf("Missing required flag \"--org\"")
+		}
+
+		if env == "" {
+			return fmt.Errorf("Missing required flag \"--env\"")
+		}
+
+		if name == "" {
+			return fmt.Errorf("Missing required flag \"--name\"")
+		}
+
+		if zipPath == "" {
+			return fmt.Errorf("Missing required flag \"--zip-path\"")
+		}
+
+		return nil
+	},
+}
+
+func uploadProxy(org string, env string, name string, dir string) (err error) {
+	var mgmtTarget string
+	if config.IsUsingE2ELogin() {
+		mgmtTarget = "https://api.e2e.apigee.net"
+	} else {
+		mgmtTarget = "https://api.enterprise.apigee.com"
+	}
+
+	list, err := mgmt.ListProxies(mgmtTarget, org, config.GetCurrentToken())
+	if err != nil { return }
+
+	if utils.ContainsString(name, list) {
+		return fmt.Errorf("Error: there already exists a proxy in %s with name %s\n", org, name)
+	}
+
+	err = mgmt.UploadProxyBundle(mgmtTarget, org, env, config.GetCurrentToken(), dir, name, verbose)
+	if err == nil {
+		fmt.Println("\nSuccessfully uploaded proxy bundle!")
+	}
+
+	return
+}
 
 // bundleCmd represents the bundle command
 var bundleCmd = &cobra.Command{
@@ -68,96 +131,8 @@ $ shipyardctl create bundle exampleName`,
 
 		defer os.RemoveAll(tmpdir)
 
-		// make apiproxy directory structure
-		dir := filepath.Join(tmpdir, "apiproxy")
-		err = os.Mkdir(dir, fileMode)
-
-		if verbose {
-			fmt.Println("Creating folder 'apiproxy' at: "+dir)
-		}
-		checkError(err, "Unable to make root apiproxy dir")
-
-		proxiesDirPath := filepath.Join(dir, "proxies")
-		err = os.Mkdir(proxiesDirPath, fileMode)
-		if verbose {
-			fmt.Println("Creating subfolder 'proxies' at: "+proxiesDirPath)
-		}
-		checkError(err, "Unable to make proxies dir")
-
-		targetsDirPath := filepath.Join(dir, "targets")
-		err = os.Mkdir(targetsDirPath, fileMode)
-		if verbose {
-			fmt.Println("Creating subfolder 'targets' at: "+targetsDirPath)
-		}
-		checkError(err, "Unable to make targets dir")
-
-		policiesDirPath := filepath.Join(dir, "policies")
-		err = os.Mkdir(policiesDirPath, fileMode)
-		if verbose {
-			fmt.Println("Creating subfolder 'policies' at: "+policiesDirPath)
-		}
-		checkError(err, "Unable to make policies dir")
-
-		// bundle user info for templates
-		if base == "" {
-			base = publicPath
-		}
-
-		bundle := Bundle{name, base, publicPath}
-
-		// example.xml --> ./apiproxy/
-		proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
-		err = proxy_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file '"+name+".xml'")
-		}
-		checkError(err, "Unable to make "+name+".xml file")
-
-		proxyTmpl, err := template.New("PROXY").Parse(PROXY_XML)
-		if err != nil { panic(err) }
-		err = proxyTmpl.Execute(proxy_xml, bundle)
-		if err != nil { panic(err) }
-
-		// AddCors.xml --> ./apiproxy/policies
-		add_cors_xml, err := os.Create(filepath.Join(policiesDirPath, "AddCors.xml"))
-		err = add_cors_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file 'policies/AddCors.xml'")
-		}
-		checkError(err, "Unable to make AddCors.xml file")
-
-		addCors, err := template.New("ADD_CORS").Parse(ADD_CORS)
-		if err != nil { panic(err) }
-		err = addCors.Execute(add_cors_xml, bundle)
-		if err != nil { panic(err) }
-
-		// default.xml --> ./apiproxy/proxies && ./apiproxy/targets
-		proxy_default_xml, err := os.Create(filepath.Join(proxiesDirPath, "default.xml"))
-		err = proxy_default_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file 'proxies/default.xml'")
-		}
-		checkError(err, "Unable to make default.xml file")
-
-		target_default_xml, err := os.Create(filepath.Join(targetsDirPath, "default.xml"))
-		err = target_default_xml.Chmod(fileMode)
-		if verbose {
-			fmt.Println("Creating file 'targets/default.xml'")
-		}
-		checkError(err, "Unable to make default.xml file")
-
-		proxyEndpoint, err := template.New("PROXY_ENDPOINT").Parse(PROXY_ENDPOINT)
-		if err != nil { panic(err) }
-		err = proxyEndpoint.Execute(proxy_default_xml, bundle)
-		if err != nil { panic(err) }
-
-		targetEndpoint, err := template.New("TARGET_ENDPOINT").Parse(TARGET_ENDPOINT)
-		err = targetEndpoint.Execute(target_default_xml, bundle)
-		if err != nil { panic(err) }
-
-		zipDir := filepath.Join(tmpdir, name+".zip")
-		err = zipper.Archive(dir, zipDir)
-		if err != nil { panic(err) }
+		zipDir, err := makeBundle(name, tmpdir, base, publicPath)
+		checkError(err, "Failed to make proxy zip")
 
 		// move zip to designated savePath
 		if savePath != "" {
@@ -199,5 +174,108 @@ func init() {
 	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "", "Proxy base path. Defaults to /")
 	bundleCmd.Flags().StringVarP(&publicPath, "publicPath", "p", "/", "Application public path. Defaults to /")
 
+
+	RootCmd.AddCommand(uploadBundleCmd)
+	uploadBundleCmd.Flags().StringVarP(&org, "org", "o", "", "Apigee org to deploy application to")
+  uploadBundleCmd.Flags().StringVarP(&env, "env", "e", "", "Apigee environment within the org to deploy application to")
+	uploadBundleCmd.Flags().StringVarP(&base, "basePath", "b", "", "Proxy base path. Defaults to /")
+	uploadBundleCmd.Flags().StringVarP(&zipPath, "zip-path", "z", "", "Path to proxy bundle zip")
+	uploadBundleCmd.Flags().StringVarP(&name, "name", "n", "", "name of the proxy being deployed")
+
 	fileMode = 0755
+}
+
+func makeBundle(name string, tmpdir string, bp string, pubPath string) (zipPath string, err error) {
+	// make apiproxy directory structure
+	dir := filepath.Join(tmpdir, "apiproxy")
+	err = os.Mkdir(dir, fileMode)
+
+	if verbose {
+		fmt.Println("Creating folder 'apiproxy' at: "+dir)
+	}
+	checkError(err, "Unable to make root apiproxy dir")
+
+	proxiesDirPath := filepath.Join(dir, "proxies")
+	err = os.Mkdir(proxiesDirPath, fileMode)
+	if verbose {
+		fmt.Println("Creating subfolder 'proxies' at: "+proxiesDirPath)
+	}
+	checkError(err, "Unable to make proxies dir")
+
+	targetsDirPath := filepath.Join(dir, "targets")
+	err = os.Mkdir(targetsDirPath, fileMode)
+	if verbose {
+		fmt.Println("Creating subfolder 'targets' at: "+targetsDirPath)
+	}
+	checkError(err, "Unable to make targets dir")
+
+	policiesDirPath := filepath.Join(dir, "policies")
+	err = os.Mkdir(policiesDirPath, fileMode)
+	if verbose {
+		fmt.Println("Creating subfolder 'policies' at: "+policiesDirPath)
+	}
+	checkError(err, "Unable to make policies dir")
+
+	// bundle user info for templates
+	if bp == "" {
+		bp = pubPath
+	}
+
+	bundle := Bundle{name, bp, pubPath}
+
+	// example.xml --> ./apiproxy/
+	proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
+	err = proxy_xml.Chmod(fileMode)
+	if verbose {
+		fmt.Println("Creating file '"+name+".xml'")
+	}
+	checkError(err, "Unable to make "+name+".xml file")
+
+	proxyTmpl, err := template.New("PROXY").Parse(PROXY_XML)
+	if err != nil { return "", err }
+	err = proxyTmpl.Execute(proxy_xml, bundle)
+	if err != nil { return "", err }
+
+	// AddCors.xml --> ./apiproxy/policies
+	add_cors_xml, err := os.Create(filepath.Join(policiesDirPath, "AddCors.xml"))
+	err = add_cors_xml.Chmod(fileMode)
+	if verbose {
+		fmt.Println("Creating file 'policies/AddCors.xml'")
+	}
+	checkError(err, "Unable to make AddCors.xml file")
+
+	addCors, err := template.New("ADD_CORS").Parse(ADD_CORS)
+	if err != nil { return "", err }
+	err = addCors.Execute(add_cors_xml, bundle)
+	if err != nil { return "", err }
+
+	// default.xml --> ./apiproxy/proxies && ./apiproxy/targets
+	proxy_default_xml, err := os.Create(filepath.Join(proxiesDirPath, "default.xml"))
+	err = proxy_default_xml.Chmod(fileMode)
+	if verbose {
+		fmt.Println("Creating file 'proxies/default.xml'")
+	}
+	checkError(err, "Unable to make default.xml file")
+
+	target_default_xml, err := os.Create(filepath.Join(targetsDirPath, "default.xml"))
+	err = target_default_xml.Chmod(fileMode)
+	if verbose {
+		fmt.Println("Creating file 'targets/default.xml'")
+	}
+	checkError(err, "Unable to make default.xml file")
+
+	proxyEndpoint, err := template.New("PROXY_ENDPOINT").Parse(PROXY_ENDPOINT)
+	if err != nil { return "", err }
+	err = proxyEndpoint.Execute(proxy_default_xml, bundle)
+	if err != nil { return "", err }
+
+	targetEndpoint, err := template.New("TARGET_ENDPOINT").Parse(TARGET_ENDPOINT)
+	err = targetEndpoint.Execute(target_default_xml, bundle)
+	if err != nil { return "", err }
+
+	zipDir := filepath.Join(tmpdir, name+".zip")
+	err = zipper.Archive(dir, zipDir)
+	if err != nil { return "", err }
+
+	return zipDir, nil
 }

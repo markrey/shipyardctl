@@ -57,19 +57,23 @@ $ shipyardctl create image example 1 "9000:/example" "./path/to/zipped/app --org
 		publicPath := args[2]
 		zipPath := args[3]
 
-		status := createImage(appName, revision, publicPath, zipPath)
+		status := createImage(appName, revision, publicPath, zipPath, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status = createImage(appName, revision, publicPath, zipPath)
+			status = createImage(appName, revision, publicPath, zipPath, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
 		}
+
+		if status == 201 {
+			fmt.Println("\nImport successful")
+		}
 	},
 }
 
-func createImage(appName string, revision string, publicPath string, zipPath string) int {
+func createImage(appName string, revision string, publicPath string, zipPath string, printBody bool) int {
 	zip, err := os.Open(zipPath)
 	if err != nil {
 		log.Fatal(err)
@@ -123,11 +127,8 @@ func createImage(appName string, revision string, publicPath string, zipPath str
 
 	// dump response to stdout
 	defer response.Body.Close()
-	if response.StatusCode == 201 {
-		fmt.Println("\nImage build successful\n")
-	}
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -183,10 +184,10 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 			appName := args[0]
 			revision := args[1]
 
-			status := getImageRevision(appName, revision)
+			status := getImageRevision(appName, revision, true)
 			if !CheckIfAuthn(status) {
 				// retry once more
-				status := getImageRevision(appName, revision)
+				status := getImageRevision(appName, revision, true)
 				if status == 401 {
 					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 					fmt.Println("Command failed.")
@@ -196,7 +197,7 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 	},
 }
 
-func getImageRevision(appName string, revision string) int {
+func getImageRevision(appName string, revision string, printBody bool) int {
 	req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
 	if verbose {
 		PrintVerboseRequest(req)
@@ -215,7 +216,7 @@ func getImageRevision(appName string, revision string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -278,19 +279,22 @@ $ shipyardctl delete image example 1 --org org1 --token <token>`,
 		appName := args[0]
 		revision := args[1]
 
-		status := deleteImage(appName, revision)
+		status := deleteImage(appName, revision, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deleteImage(appName, revision)
+			status := deleteImage(appName, revision, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
 		}
+		if status == 200 {
+			fmt.Println("Deletion of image successful.")
+		}
 	},
 }
 
-func deleteImage(appName string, revision string) int {
+func deleteImage(appName string, revision string, printBody bool) int {
 	req, err := http.NewRequest("DELETE", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
 	if verbose {
 		PrintVerboseRequest(req)
@@ -309,11 +313,7 @@ func deleteImage(appName string, revision string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode == 200 {
-		fmt.Println("Deletion of image successful.")
-	}
-
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)

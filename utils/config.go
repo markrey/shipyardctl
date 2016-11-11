@@ -167,3 +167,8 @@ func (c *Config) SaveToken(username string, token string) error {
 
   return fmt.Errorf("Could not find current context: %s", c.CurrentContext)
 }
+
+// IsUsingE2ELogin checks to see if the current context sso login url is pointed at Apigee e2e
+func (c *Config) IsUsingE2ELogin() bool {
+  return c.GetCurrentSSOTarget() == "https://login.e2e.apigee.net"
+}

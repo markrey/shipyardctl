@@ -75,3 +75,13 @@ func getConfigPath() (string, error) {
 
   return filepath.Join(home, ShipyardctlConfigDir, ShipyardctlConfigFileName), err
 }
+
+// ContainsString returns if a slice contains the given string
+func ContainsString(str string, list []string) bool {
+  for _, v := range list {
+    if v == str {
+      return true
+    }
+  }
+  return false
+}

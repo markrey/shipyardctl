@@ -58,10 +58,10 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 		}
 
 		envName = args[0]
-		status := getEnvironment(envName)
+		status := getEnvironment(envName, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := getEnvironment(envName)
+			status := getEnvironment(envName, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -70,7 +70,7 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 	},
 }
 
-func getEnvironment(envName string) int {
+func getEnvironment(envName string, printBody bool) int {
 	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
@@ -89,7 +89,7 @@ func getEnvironment(envName string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -188,19 +188,23 @@ $ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" -
 
 		hostnames := args[1:]
 
-		status := createEnv(envName, hostnames)
+		status := createEnv(envName, hostnames, true)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := createEnv(envName, hostnames)
+			status := createEnv(envName, hostnames, true)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
 		}
+
+		if status == 201 {
+			fmt.Println("\nCreation of " + envName + " was successful\n")
+		}
 	},
 }
 
-func createEnv(envName string, hostnames []string) int {
+func createEnv(envName string, hostnames []string, printBody bool) int {
 	js, _ := json.Marshal(Environment{envName, hostnames})
 
 	req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
@@ -221,11 +225,8 @@ func createEnv(envName string, hostnames []string) int {
 	}
 
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nCreation of " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
+	if response.StatusCode != 401 && printBody {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
