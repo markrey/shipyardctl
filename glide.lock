@@ -1,24 +1,24 @@
 hash: 4c63826cd73800e94331bf96bfbac42edde5e28880948bc4e571715dd0853a4d
-updated: 2016-10-31T09:31:13.078683705-07:00
+updated: 2016-12-02T14:29:05.298147114-05:00
 imports:
 - name: github.com/30x/zipper
-  version: d4202870e57102b653d44c709e5349f61b9d9b92
+  version: e94610c9bd69319dbcb930a61b70ab857003264f
 - name: github.com/howeyc/gopass
   version: f5387c492211eb133053880d23dfae62aa14123d
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/spf13/cobra
-  version: 6e91dded25d73176bf7f60b40dd7aa1f0bf9be8d
+  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: golang.org/x/crypto
-  version: b2fa06b6af4b7c9bfeb8569ab7b17f04550717bf
+  version: 8a549a1948fc5271eb24f36dcb0d3b47dec75a16
   subpackages:
   - ssh/terminal
 - name: golang.org/x/sys
-  version: c200b10b5d5e122be351b67af224adc6128af5bf
+  version: ca83bd2cb9abb47839b50eb4da612f00158f5870
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2
   version: a5b47d31c556af34a302ce5d659e6fea44d90de0
-testImports: []
+devImports: []
