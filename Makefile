@@ -1,6 +1,6 @@
 #Format is MAJOR . MINOR . PATCH
 
-VERSION=1.3.1
+VERSION=1.3.2
 GO_VERSION=1.7
 
 release: dir-build package-linux package-windows package-darwin
