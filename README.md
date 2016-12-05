@@ -233,12 +233,6 @@ Upload this to Apigee Edge. Make sure to deploy the proxy after uploading it.
 ```
 This deletes the named deployment.
 
-**13. Delete the environment**
-```sh
-> shipyardctl delete environment "org1:env1"
-```
-This deletes the named environment.
-
 **14. Delete the image**
 ```sh
 > shipyardctl delete image "example" 1

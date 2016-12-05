@@ -99,67 +99,6 @@ func getEnvironment(envName string) int {
 	return response.StatusCode
 }
 
-var deleteEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName>",
-	Short: "deletes an active environment",
-	Long: `Given the name of an active environment, this will delete it.
-
-Example of use:
-$ shipyardctl delete environment org1:env1 --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		status := deleteEnv(envName)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := deleteEnv(envName)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
-func deleteEnv(envName string) int {
-	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
-	}
-
-	req.Header.Set("Authorization", "Bearer " + authToken)
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if verbose {
-			PrintVerboseResponse(response)
-		}
-
-	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nDeletion of " + envName + " was successful\n")
-	}
-
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return response.StatusCode
-}
-
 var patchEnvCmd = &cobra.Command{
 	Use:   "environment <environmentName> <hostnames...>",
 	Short: "update an active environment",
@@ -237,6 +176,5 @@ func patchEnv(envName string, hostnames []string) int {
 func init() {
 	getCmd.AddCommand(environmentCmd)
 
-	deleteCmd.AddCommand(deleteEnvCmd)
 	patchCmd.AddCommand(patchEnvCmd)
 }
