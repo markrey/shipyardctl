@@ -82,11 +82,6 @@ The list of available commands is as follows:
         delete
     ▾ applications
         get
-    ▾ environment
-        create
-        get
-        patch
-        delete
     ▾ deployment
         create
         get
