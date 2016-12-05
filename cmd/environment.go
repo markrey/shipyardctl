@@ -160,81 +160,6 @@ func deleteEnv(envName string) int {
 	return response.StatusCode
 }
 
-var createEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
-	Short: "creates a new environment with name and hostnames",
-	Long: `An environment is created by providing an environment name, by which
-it will be identified, and a space separated list of accepted hostnames.
-The environment name must be of the form {apigee_org}:{environment_name}.
-
-Example of use:
-$ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg(s) <hostnames...>")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		hostnames := args[1:]
-
-		status := createEnv(envName, hostnames)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := createEnv(envName, hostnames)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
-func createEnv(envName string, hostnames []string) int {
-	js, _ := json.Marshal(Environment{envName, hostnames})
-
-	req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
-
-	if verbose {
-		PrintVerboseRequest(req)
-	}
-
-	req.Header.Set("Authorization", "Bearer " + authToken)
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if verbose {
-		PrintVerboseResponse(response)
-	}
-
-	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nCreation of " + envName + " was successful\n")
-	}
-
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return response.StatusCode
-}
-
 var patchEnvCmd = &cobra.Command{
 	Use:   "environment <environmentName> <hostnames...>",
 	Short: "update an active environment",
@@ -313,6 +238,5 @@ func init() {
 	getCmd.AddCommand(environmentCmd)
 
 	deleteCmd.AddCommand(deleteEnvCmd)
-	createCmd.AddCommand(createEnvCmd)
 	patchCmd.AddCommand(patchEnvCmd)
 }

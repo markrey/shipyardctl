@@ -173,25 +173,6 @@ and the path to your zipped Node app. If you want to bake an environment variabl
 ```
 This retrieves the available information for the image specified by the application name and revision number
 
-**4. Create a new environment**
-
-This command will create the environment that will host your deployed Node.js applications.
-
-```sh
-> shipyardctl create environment "org1:env1" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
-> export PUBLIC_KEY="<copy public key in creation response here>"
-```
-Here we create a new environment with the name "org1:env1" and the accepted hostnames of "orgName-test.apigee.net"
-and "orgName-prod.apigee.net", a space delimited list.
-
-> _Note: the naming convention used for hostnames is not strictly enforced, but will make Apigee Edge integration easier_
-
-**5. Retrieve the newly created environment by name**
-```sh
-> shipyardctl get environment "org1:env1"
-```
-Here we have retrieved the newly created environment, by name.
-
 **6. Update the environment's set of accepted hostnames**
 ```sh
 > shipyardctl patch environment "org1:env1" "test.host.name3" "test.host.name4"
