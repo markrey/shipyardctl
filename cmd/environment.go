@@ -19,21 +19,10 @@ import (
 	"log"
 	"io"
 	"os"
-	"bytes"
-	"encoding/json"
 	"net/http"
 
 	"github.com/spf13/cobra"
 )
-
-type Environment struct {
-	EnvironmentName string
-	HostNames []string
-}
-
-type EnvironmentPatch struct {
-	HostNames []string
-}
 
 // environmentCmd represents the environment command
 
@@ -99,82 +88,6 @@ func getEnvironment(envName string) int {
 	return response.StatusCode
 }
 
-var patchEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
-	Short: "update an active environment",
-	Long: `Given the name of an active environment and a space delimited
-set of hostnames, the environment will be updated. A patch of the hostnames
-will replace them entirely.
-
-Example of use:
-$ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg(s) <hostnames...>")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		hostnames := args[1:]
-		status := patchEnv(envName, hostnames)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := patchEnv(envName, hostnames)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
-func patchEnv(envName string, hostnames []string) int {
-	js, _ := json.Marshal(EnvironmentPatch{hostnames})
-
-	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
-
-	if verbose {
-		PrintVerboseRequest(req)
-	}
-
-	req.Header.Set("Authorization", "Bearer " + authToken)
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if verbose {
-		PrintVerboseResponse(response)
-	}
-
-	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nPatch of " + envName + " was successful\n")
-	}
-
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return response.StatusCode
-}
-
 func init() {
 	getCmd.AddCommand(environmentCmd)
-
-	patchCmd.AddCommand(patchEnvCmd)
 }
