@@ -325,7 +325,7 @@ func deleteImage(appName string, revision string) int {
 
 func init() {
 	createCmd.AddCommand(imageCmd)
-	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
+	imageCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	imageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	imageCmd.Flags().StringVarP(&nodeVersion, "node-version", "n", "4", "Node version to use in base image.")
 
